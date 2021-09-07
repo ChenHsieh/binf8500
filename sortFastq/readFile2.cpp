@@ -55,7 +55,7 @@ void quicksort(vector<string> seqs, int left, int right)
         quicksort(seqs, pivotIndex + 1, right);
     }
 }
-int main(int argc, char *argv[])
+int main(int argc, char** argv)
 {
 
     string line;
