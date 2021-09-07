@@ -67,8 +67,8 @@ int main(int argc, char **argv)
 {
 
     string line;
-    // ifstream myfile(argv[1]);
-    ifstream myfile("sample1k.fastq");
+    ifstream myfile(argv[1]);
+    // ifstream myfile("sample1k.fastq");
     // ifstream myfile("test.fastq");
     // ofstream resultfile;
     // resultfile.open("out.fastq");
