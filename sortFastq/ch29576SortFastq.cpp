@@ -103,10 +103,10 @@ int main(int argc, char **argv)
     {
         cout << "Unable to open file";
     }
-    cout << "file reading finished" << endl;
+    // cout << "file reading finished" << endl;
     // let the quickSort kick in
     quicksort(seqs, 0, seqs.size() - 1);
-    cout << "quick sort finished" << endl;
+    // cout << "quick sort finished" << endl;
     // recontruct the file for output
     for (int i = 0; i < seqs.size(); i++)
     {
