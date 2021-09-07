@@ -15,7 +15,7 @@ int partition(vector<string> &seqs, int left, int right)
     int pivotIndex = left + (right - left) / 2; // pick the middle one as pivot
     string pivotString = seqs[pivotIndex];      // get value
     // when still moving to the middle
-    while (l < r)
+    while (l <= r)
     {
 
         // move boundaries to the middle
@@ -29,9 +29,9 @@ int partition(vector<string> &seqs, int left, int right)
             r--;
         }
         // check not ending case
-        if (l < r)
+        if (l <= r)
         {
-            temp =seqs[l];
+            temp = seqs[l];
             seqs[l] = seqs[r];
             seqs[r] = temp;
             // offset to move on to next iteration
@@ -51,21 +51,24 @@ void quicksort(vector<string> &seqs, int left, int right)
         int pivotIndex = partition(seqs, left, right);
         // cout << "pivotIndex: " << pivotIndex << endl;
         // cout << "left: " << left << endl;
-        // cout << "right: " << right << endl;ssss
+        // cout << "left: " << seqs[left] << endl;
+        // cout << "right: " << right << endl;
+        // cout << "right: " << seqs[right] << endl;
         // for (int i = 0; i < seqs.size(); i++)
         // {
         //     cout << seqs[i] << endl;
         // }
         // let the recursive functions to divide and conquor
-        quicksort(seqs, left, pivotIndex);
-        quicksort(seqs, pivotIndex + 1, right);
+        quicksort(seqs, left, pivotIndex-1);
+        quicksort(seqs, pivotIndex, right);
     }
 }
 int main(int argc, char **argv)
 {
 
     string line;
-    ifstream myfile(argv[1]);
+    // ifstream myfile(argv[1]);
+    ifstream myfile("sample1k.fastq");
     // ifstream myfile("test.fastq");
     // ofstream resultfile;
     // resultfile.open("out.fastq");
@@ -100,10 +103,10 @@ int main(int argc, char **argv)
     {
         cout << "Unable to open file";
     }
-    // cout << "file reading finished" << endl;
+    cout << "file reading finished" << endl;
     // let the quickSort kick in
     quicksort(seqs, 0, seqs.size() - 1);
-    // cout << "quick sort finished" << endl;
+    cout << "quick sort finished" << endl;
     // recontruct the file for output
     for (int i = 0; i < seqs.size(); i++)
     {
