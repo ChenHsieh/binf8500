@@ -1,36 +1,38 @@
-#include <stdio.h>
-#include <limits.h>
-#include <string.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+using namespace std;
 
 // functions
-// hoare
-void partition(char *str[], int left, int right)
-{
-	 // take the first one as pivot
-     char *pivot = str[0];
-     int l = left;
-     int r = right;
-     while (l <= r)
-     {
-         while (str[l] < pivot)
-           l++;
-	 while (str[r] > pivot)
-		 r--;
-	 swap(l,r);
-     }
-     return r;
- }
+// // hoare
+// void partition(char *str[], int left, int right)
+// {
+// 	 // take the first one as pivot
+//      char *pivot = str[0];
+//      int l = left;
+//      int r = right;
+//      while (l <= r)
+//      {
+//          while (str[l] < pivot)
+//            l++;
+// 	 while (str[r] > pivot)
+// 		 r--;
+// 	 swap(l,r);
+//      }
+//      return r;
+//  }
 
- void quickSort(char *arr, int low, int high)
- {
-     if (low < high)
-     {
-         int pi = partition(arr, low, high);
-         quickSort(arr, low, pi - 1);
-         quickSort(arr, pi + 1, high);
-     }
+//  void quickSort(char *arr, int low, int high)
+//  {
+//      if (low < high)
+//      {
+//          int pi = partition(arr, low, high);
+//          quickSort(arr, low, pi - 1);
+//          quickSort(arr, pi + 1, high);
+//      }
 
- }
+//  }
 
 int main()
 {
