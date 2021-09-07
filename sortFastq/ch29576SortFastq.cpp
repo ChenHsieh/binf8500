@@ -112,8 +112,6 @@ int main(int argc, char **argv)
     {
         cout << chunk_map[seqs[i]];
     }
-
-    // resultfile.close();
-
+    
     return 0;
 }
