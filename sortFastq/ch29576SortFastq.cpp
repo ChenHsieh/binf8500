@@ -1,8 +1,13 @@
+// binf8500 assignment 1 - fastq sorting
+// Student: Chen Hsieh
+// ID: ch29576, 811744663
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <map>
+
 using namespace std;
 
 // functions for quick sort
@@ -49,17 +54,9 @@ void quicksort(vector<string> &seqs, int left, int right)
     {
         // partition, get the index of the pivot
         int pivotIndex = partition(seqs, left, right);
-        // cout << "pivotIndex: " << pivotIndex << endl;
-        // cout << "left: " << left << endl;
-        // cout << "left: " << seqs[left] << endl;
-        // cout << "right: " << right << endl;
-        // cout << "right: " << seqs[right] << endl;
-        // for (int i = 0; i < seqs.size(); i++)
-        // {
-        //     cout << seqs[i] << endl;
-        // }
+
         // let the recursive functions to divide and conquor
-        quicksort(seqs, left, pivotIndex-1);
+        quicksort(seqs, left, pivotIndex - 1);
         quicksort(seqs, pivotIndex, right);
     }
 }
@@ -68,16 +65,13 @@ int main(int argc, char **argv)
 
     string line;
     ifstream myfile(argv[1]);
-    // ifstream myfile("sample1k.fastq");
-    // ifstream myfile("test.fastq");
-    // ofstream resultfile;
-    // resultfile.open("out.fastq");
 
     int count = 0;
     int chunk_count = 0;
     vector<string> seqs;
     map<string, string> chunk_map;
     string chunk = "";
+
     // read file and store stuffs
     if (myfile.is_open())
     {
@@ -90,8 +84,9 @@ int main(int argc, char **argv)
             {
                 seqs.push_back(line);
             }
-            else if (count % 4 == 3) // quality line
+            else if (count % 4 == 3) // hitting quality line
             {
+                // save all the chunk and reset chunk
                 chunk_map[seqs[chunk_count]] = chunk;
                 chunk = "";
             }
@@ -103,15 +98,15 @@ int main(int argc, char **argv)
     {
         cout << "Unable to open file";
     }
-    // cout << "file reading finished" << endl;
+
     // let the quickSort kick in
     quicksort(seqs, 0, seqs.size() - 1);
-    // cout << "quick sort finished" << endl;
-    // recontruct the file for output
+
+    // reconstruct the file for output
     for (int i = 0; i < seqs.size(); i++)
     {
         cout << chunk_map[seqs[i]];
     }
-    
+
     return 0;
 }
