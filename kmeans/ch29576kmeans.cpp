@@ -8,10 +8,88 @@
 #include <string>
 #include <vector>
 #include <map>
-
+#include <math.h>
 using namespace std;
 
-// void kMeansClustering(array<>* points, int epochs, int k);
+const int M = 20;
+
+void kMeansClustering(int data[][M], int epochs, int k)
+{
+    vector<int> clusterAssignment(sizeof(data));
+    vector<vector<int> > clusterPoints(k);
+    vector<int> centroids(k);
+    int i, j;
+    int minIndex;
+    double minDistance;
+    double distance;
+    int count;
+    int index;
+    int centroidIndex;
+    int iteration;
+    // pick centroids randomly
+    for (i = 0; i < k; i++)
+    {
+        centroids[i] = rand() % sizeof(data);
+        cout << "centroids[" << i << "] = " << centroids[i] << endl;
+        for (count = 0; count < sizeof(data[i]); count++)
+        {
+            clusterPoints[i].push_back(data[centroids[i]][count]);
+        }
+    }
+
+    for (iteration = 0; iteration < epochs; iteration++)
+    {
+        // calculate distance
+        for (i = 0; i < sizeof(data); i++)
+        {
+            minDistance = 1000000;
+            minIndex = -1;
+            // for k centroid
+            for (j = 0; j < k; j++)
+            {
+                distance = 0;
+                // foreach dimension of the data point
+                for (count = 0; count < M; count++)
+                {
+                    // sum of square of difference
+                    distance += pow(data[i][count] - clusterPoints[j][count], 2);
+                }
+                // if the distance is smaller than the min distance
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    minIndex = j;
+                }
+            }
+            // assign the data point to the cluster
+            clusterAssignment[i] = minIndex;
+        }
+
+        // create new centroids
+        for (i = 0; i < k; i++)
+        {
+            clusterPoints[i].clear();
+            
+            for (count = 0; count < M; count++)// for each dimension
+            {
+                centroidIndex = 0;
+                
+                for (j = 0; j < sizeof(data); j++)// for each data point
+                {
+                    
+                    if (clusterAssignment[j] == i)// if the data point is in the cluster
+                    {
+                        centroidIndex += data[j][count];
+                    }
+                }
+                // divide by the number of data points in the cluster
+                centroidIndex /= sizeof(data);
+                // assign the new centroid
+                clusterPoints[i].push_back(centroidIndex);
+            }
+        }
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -87,10 +165,12 @@ int main(int argc, char **argv)
             lineStart = lineEnd + 1;
         }
         start = end + 1;
-
-        cout << i << endl;
     }
     cout << "data[0][0]: " << data[0][0] << endl;
+    cout << "read data finished" << endl;
+    // standardize the data
+
+    // k-means clustering
 
     return 0;
 }
