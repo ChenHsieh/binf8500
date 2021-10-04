@@ -15,25 +15,32 @@
 #include <stdlib.h>
 #include <time.h>
 
+
 using namespace std;
 
-void kMeansClustering(vector<vector<float> > data, int k)
-{
-    for (int i = 0; i < data.size(); i++)
-    {
-        cout << data[i][0] << " " << data[i][1] << endl;
+double getDistance(vector<double> a, vector<double> b) {
+    double sum = 0;
+    for (int i = 0; i < a.size(); i++) {
+        sum += pow(a[i] - b[i], 2);
     }
-    int maxReps = 50;
-    float minError = 1000000;
-    float bestMeanDistance = 0;
+    return sqrt(sum);
+}
+
+
+void kMeansClustering(vector<vector<double> > data, int k)
+{
+
+    int maxReps = 400;
+    double minError = 1000000;
+    double bestMeanDistance = 0;
     int epochs = 1000;
     int M = data[0].size();
-    vector<vector<float> > bestClusterPoints(k);
+    vector<vector<double> > bestClusterPoints(k);
     for (int rep = 0; rep < maxReps; rep++)
     {
         // cout << "Repetition: " << rep << endl;
 
-        vector<vector<float> > clusterPoints(k);
+        vector<vector<double> > clusterPoints(k);
         vector<int> clusterAssignment(data.size());
         vector<int> previousRoundClusterAssignment(data.size());
         for (int i = 0; i < data.size(); i++)
@@ -41,27 +48,27 @@ void kMeansClustering(vector<vector<float> > data, int k)
             previousRoundClusterAssignment.push_back(0);
         }
         int i, j;
-        float minIndex;
+        double minIndex;
         double minDistance;
         double distance;
         int count;
 
-        float centroidIndex;
+        double centroidIndex;
         int iteration;
         int randomPick;
-        float meanDistance = 0;
+        double meanDistance = 0;
 
         // pick centroids randomly
-        srand(time(NULL) / rand());
-        cout << time(NULL) / rand() << " ";
         for (i = 0; i < k; i++)
         {
             randomPick = rand() % data.size();
             clusterPoints[i] = data[randomPick];
         }
+
         for (iteration = 0; iteration < epochs; iteration++)
         {
             // calculate distance
+            meanDistance = 0;
             for (i = 0; i < data.size(); i++)
             {
                 minDistance = 1000000;
@@ -69,14 +76,7 @@ void kMeansClustering(vector<vector<float> > data, int k)
                 // for k centroid
                 for (j = 0; j < k; j++)
                 {
-                    distance = 0;
-                    // foreach dimension of the data point
-                    for (count = 0; count < M; count++)
-                    {
-                        // sum of square of difference
-                        distance += pow(data[i][count] - clusterPoints[j][count], 2);
-                    }
-                    distance = sqrt(distance);
+                    distance = getDistance(data[i], clusterPoints[j]);
                     // cout << distance << "\t";
                     // if the distance is smaller than the min distance
                     if (distance < minDistance)
@@ -95,8 +95,8 @@ void kMeansClustering(vector<vector<float> > data, int k)
             // create new cluster points
             for (i = 0; i < k; i++)
             {
-                cout << endl
-                     << "Cluster " << i << ": ";
+                // cout << endl
+                //      << "Cluster " << i << ": ";
                 clusterPoints[i].clear();
                 centroidIndex = 0;
                 bool emptyCluster = true;
@@ -111,7 +111,7 @@ void kMeansClustering(vector<vector<float> > data, int k)
                             centroidIndex += (data[j][count] / data.size());
                         }
                     }
-                    cout << centroidIndex << "\t";
+                    // cout << centroidIndex << "\t";
                     clusterPoints[i].push_back(centroidIndex);
                 }
                 if (emptyCluster)
@@ -125,15 +125,14 @@ void kMeansClustering(vector<vector<float> > data, int k)
                 
                 // assign the new centroid
             }
-            for (i = 0; i < data.size(); i++)
-            {
-
-                cout << clusterAssignment[i] << ";" << previousRoundClusterAssignment[i] << " ";
-            }
+            // for (i = 0; i < data.size(); i++)
+            // {
+            //     cout << clusterAssignment[i] << ";" << previousRoundClusterAssignment[i] << " ";
+            // }
             // convergence or not
             if (clusterAssignment == previousRoundClusterAssignment)
             {
-                // cout << "Convergence after " << iteration << " iterations" << endl;
+                cout << "Convergence after " << iteration << " iterations" << endl;
                 // cout << iteration << "\t";
                 break;
             }
@@ -151,10 +150,8 @@ void kMeansClustering(vector<vector<float> > data, int k)
         double error = 0;
         for (i = 0; i < data.size(); i++) // for each data point
         {
-            for (count = 0; count < M; count++) // for each dimension
-            {
-                error += pow(data[i][count] - clusterPoints[clusterAssignment[i]][count], 2);
-            }
+            error += pow(getDistance(data[i], clusterPoints[clusterAssignment[i]]),2);
+
         }
         // cout << "WCSS = " << error << endl;
         if (error < minError)
@@ -225,18 +222,18 @@ int main(int argc, char **argv)
     cout << "colSize: " << colSize << endl;
 
     // create a 2D array to store the data
-    float data[rowSize - 1][colSize - 1];
-    // float data[][colSize - 1];
-    // float **points = new float*[rowSize];
+    double data[rowSize - 1][colSize - 1];
+    // double data[][colSize - 1];
+    // double **points = new double*[rowSize];
 
     end = file_contents.find("\n", 0);
     start = end + 1;
     int lineEnd, lineStart;
-    vector<vector<float> > dataPoints;
+    vector<vector<double> > dataPoints;
 
     for (int i = 0; i < rowSize - 1; i++)
     {
-        dataPoints.push_back(vector<float>());
+        dataPoints.push_back(vector<double>());
         end = file_contents.find("\n", start);
         std::string currentLine = file_contents.substr(start, end - start);
 
@@ -256,8 +253,8 @@ int main(int argc, char **argv)
     cout << "read data finished..." << endl;
 
     // calculate the mean and standard deviation
-    vector<float> mean;
-    vector<float> std;
+    vector<double> mean;
+    vector<double> std;
     for (int i = 0; i < colSize - 1; i++)
     {
         mean.push_back(0);
