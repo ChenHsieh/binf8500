@@ -12,11 +12,18 @@
 #include <map>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
+#include <time.h>
+
 using namespace std;
 
 void kMeansClustering(vector<vector<float> > data, int k)
 {
-    int maxReps = 5;
+    for (int i = 0; i < data.size(); i++)
+    {
+        cout << data[i][0] << " " << data[i][1] << endl;
+    }
+    int maxReps = 50;
     float minError = 1000000;
     float bestMeanDistance = 0;
     int epochs = 1000;
@@ -45,6 +52,8 @@ void kMeansClustering(vector<vector<float> > data, int k)
         float meanDistance = 0;
 
         // pick centroids randomly
+        srand(time(NULL) / rand());
+        cout << time(NULL) / rand() << " ";
         for (i = 0; i < k; i++)
         {
             randomPick = rand() % data.size();
@@ -86,21 +95,24 @@ void kMeansClustering(vector<vector<float> > data, int k)
             // create new cluster points
             for (i = 0; i < k; i++)
             {
+                cout << endl
+                     << "Cluster " << i << ": ";
                 clusterPoints[i].clear();
                 centroidIndex = 0;
                 bool emptyCluster = true;
-                for (j = 0; j < data.size(); j++) // for each data point
+                for (count = 0; count < M; count++) // for each dimension
                 {
-                    if (clusterAssignment[j] == i) // if any data point is in the cluster
+                    for (j = 0; j < data.size(); j++) // for each data point
                     {
-                        emptyCluster = false;
-                        for (count = 0; count < M; count++) // for each dimension
+                        if (clusterAssignment[j] == i) // if any data point is in the cluster
                         {
+                            emptyCluster = false;
+
                             centroidIndex += (data[j][count] / data.size());
                         }
-                        // cout << centroidIndex << "\t";
-                        clusterPoints[i].push_back(centroidIndex);
                     }
+                    cout << centroidIndex << "\t";
+                    clusterPoints[i].push_back(centroidIndex);
                 }
                 if (emptyCluster)
                 {
@@ -110,13 +122,13 @@ void kMeansClustering(vector<vector<float> > data, int k)
                 }
                 // divide by the number of data points in the cluster
 
-                // cout << "k: " << i << " dimension " << count << "] = " << centroidIndex << endl;
+                
                 // assign the new centroid
             }
             for (i = 0; i < data.size(); i++)
             {
 
-                // cout << clusterAssignment[i] << ";" << previousRoundClusterAssignment[i] << " ";
+                cout << clusterAssignment[i] << ";" << previousRoundClusterAssignment[i] << " ";
             }
             // convergence or not
             if (clusterAssignment == previousRoundClusterAssignment)
