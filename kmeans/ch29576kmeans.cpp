@@ -11,25 +11,25 @@
 #include <vector>
 #include <map>
 #include <math.h>
+#include <time.h>
 using namespace std;
-
-const int M = 20;
 
 void kMeansClustering(vector<vector<float> > data, int k)
 {
-    int maxReps = 100;
+    int maxReps = 5;
     float minError = 1000000;
-    int epochs = 100;
+    float bestMeanDistance = 0;
+    int epochs = 1000;
+    int M = data[0].size();
     vector<vector<float> > bestClusterPoints(k);
     for (int rep = 0; rep < maxReps; rep++)
     {
-        cout << "Repetition: " << rep << endl;
+        // cout << "Repetition: " << rep << endl;
 
         vector<vector<float> > clusterPoints(k);
-        vector<int> centroids(k);
-        vector<int> clusterAssignment(sizeof(data));
-        vector<int> previousRoundClusterAssignment(sizeof(data));
-        for (int i = 0; i < sizeof(data); i++)
+        vector<int> clusterAssignment(data.size());
+        vector<int> previousRoundClusterAssignment(data.size());
+        for (int i = 0; i < data.size(); i++)
         {
             previousRoundClusterAssignment.push_back(0);
         }
@@ -38,33 +38,22 @@ void kMeansClustering(vector<vector<float> > data, int k)
         double minDistance;
         double distance;
         int count;
-        int index;
+
         float centroidIndex;
         int iteration;
+        int randomPick;
+        float meanDistance = 0;
+
         // pick centroids randomly
         for (i = 0; i < k; i++)
         {
-            centroids[i] = rand() % sizeof(data);
-            for (count = 0; count < sizeof(data[i]); count++)
-            {
-                clusterPoints[i].push_back(data[centroids[i]][count]);
-            }
+            randomPick = rand() % data.size();
+            clusterPoints[i] = data[randomPick];
         }
-
-        // for (i = 0; i < k; i++)
-        // {
-        //     for (count = 0; count < sizeof(data[i]); count++)
-        //     {
-        //         cout << "clusterPoints[" << i << "," << count << ":" << clusterPoints[i][count] << endl;
-        //     }
-        // }
-
-        centroids.clear();
         for (iteration = 0; iteration < epochs; iteration++)
         {
-            // cout << "Iteration: " << iteration << endl;
             // calculate distance
-            for (i = 0; i < sizeof(data); i++)
+            for (i = 0; i < data.size(); i++)
             {
                 minDistance = 1000000;
                 minIndex = -1;
@@ -78,6 +67,8 @@ void kMeansClustering(vector<vector<float> > data, int k)
                         // sum of square of difference
                         distance += pow(data[i][count] - clusterPoints[j][count], 2);
                     }
+                    distance = sqrt(distance);
+                    // cout << distance << "\t";
                     // if the distance is smaller than the min distance
                     if (distance < minDistance)
                     {
@@ -85,38 +76,53 @@ void kMeansClustering(vector<vector<float> > data, int k)
                         minIndex = j;
                     }
                 }
+                // cout << i << ":" << minDistance << endl;
                 // assign the data point to the cluster
                 clusterAssignment[i] = minIndex;
+                // cout << clusterAssignment[i] << "\t";
+                meanDistance += minDistance / data.size();
             }
+
             // create new cluster points
             for (i = 0; i < k; i++)
             {
-                // clusterPoints[i].clear();
-
-                for (count = 0; count < M; count++) // for each dimension
+                clusterPoints[i].clear();
+                centroidIndex = 0;
+                bool emptyCluster = true;
+                for (j = 0; j < data.size(); j++) // for each data point
                 {
-                    centroidIndex = 0;
-
-                    for (j = 0; j < sizeof(data); j++) // for each data point
+                    if (clusterAssignment[j] == i) // if any data point is in the cluster
                     {
-
-                        if (clusterAssignment[j] == i) // if the data point is in the cluster
+                        emptyCluster = false;
+                        for (count = 0; count < M; count++) // for each dimension
                         {
-                            centroidIndex += data[j][count];
+                            centroidIndex += (data[j][count] / data.size());
                         }
+                        // cout << centroidIndex << "\t";
+                        clusterPoints[i].push_back(centroidIndex);
                     }
-                    // divide by the number of data points in the cluster
-                    centroidIndex /= sizeof(data);
-                    // cout << "k: " << i << " dimension " << count << "] = " << centroidIndex << endl;
-                    // assign the new centroid
-                    clusterPoints[i].push_back(centroidIndex);
                 }
-            }
+                if (emptyCluster)
+                {
+                    cout << "Empty cluster" << endl;
+                    randomPick = rand() % data.size();
+                    clusterPoints[i] = data[randomPick];
+                }
+                // divide by the number of data points in the cluster
 
+                // cout << "k: " << i << " dimension " << count << "] = " << centroidIndex << endl;
+                // assign the new centroid
+            }
+            for (i = 0; i < data.size(); i++)
+            {
+
+                // cout << clusterAssignment[i] << ";" << previousRoundClusterAssignment[i] << " ";
+            }
             // convergence or not
             if (clusterAssignment == previousRoundClusterAssignment)
             {
-                cout << "Convergence after " << iteration << " iterations" << endl;
+                // cout << "Convergence after " << iteration << " iterations" << endl;
+                // cout << iteration << "\t";
                 break;
             }
             else
@@ -126,26 +132,35 @@ void kMeansClustering(vector<vector<float> > data, int k)
             }
             if (iteration == epochs - 1)
             {
-                cout << "epochs: " << iteration << endl;
+                // cout << "epochs: " << iteration << endl;
             }
         }
         // measure the error, WCSS - within cluster sum of squares
         double error = 0;
-        for (i = 0; i < sizeof(data); i++) // for each data point
+        for (i = 0; i < data.size(); i++) // for each data point
         {
             for (count = 0; count < M; count++) // for each dimension
             {
                 error += pow(data[i][count] - clusterPoints[clusterAssignment[i]][count], 2);
             }
         }
-        cout << "WCSS = " << error << endl;
+        // cout << "WCSS = " << error << endl;
         if (error < minError)
         {
             minError = error;
             bestClusterPoints = clusterPoints;
+            bestMeanDistance = meanDistance;
         }
     }
-    cout << "WCSS = " << minError << endl;
+    cout << "Mean distance " << bestMeanDistance << " minWCSS = " << minError << endl;
+    for (int i = 0; i < k; i++)
+    {
+        for (int j = 0; j < M; j++)
+        {
+            cout << bestClusterPoints[i][j] << " ";
+        }
+        cout << endl;
+    }
 }
 
 int main(int argc, char **argv)
@@ -240,13 +255,8 @@ int main(int argc, char **argv)
     {
         for (int j = 0; j < colSize - 1; j++)
         {
-            // data[i][j] = (data[i][j] - mean(dataPoints[i])) / standardDeviation(dataPoints[i]);
-            mean[j] += data[i][j];
+            mean[j] += (data[i][j] / (rowSize - 1));
         }
-    }
-    for (int i = 0; i < colSize - 1; i++)
-    {
-        mean[i] /= rowSize - 1;
     }
     for (int i = 0; i < rowSize - 1; i++)
     {
@@ -257,7 +267,7 @@ int main(int argc, char **argv)
     }
     for (int i = 0; i < colSize - 1; i++)
     {
-        std[i] /= rowSize - 1;
+        std[i] /= (rowSize - 2); //sample deviation
         std[i] = sqrt(std[i]);
     }
 
@@ -267,15 +277,21 @@ int main(int argc, char **argv)
         for (int j = 0; j < colSize - 1; j++)
         {
             dataPoints[i][j] = (data[i][j] - mean[j]) / std[j];
-            cout << dataPoints[i][j] << " ";
+            // cout << dataPoints[i][j] << " ";
         }
-        cout << endl;
+        // cout << endl;
     }
+    // for (int j = 0; j < colSize - 1; j++)
+    // {
+
+    //     cout << mean[j] << " ";
+
+    // }
 
     // k-means clustering
     for (int k = minimal_k; k <= maximal_k; k++)
     {
-        cout << "k = " << k << endl;
+        cout << "k = " << k << "\t";
         kMeansClustering(dataPoints, k);
     }
 
