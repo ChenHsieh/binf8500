@@ -13,7 +13,7 @@
 #include <math.h>
 #include <time.h>
 #include <stdlib.h>
-#include <time.h>
+
 
 using namespace std;
 
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
         std::string currentLine = file_contents.substr(start, end - start);
 
         lineEnd = currentLine.find("\t", 0);
-
+        lineStart = 0;
         label_map[i] = currentLine.substr(lineStart, lineEnd - lineStart);
         lineStart = lineEnd + 1;
         // cout << "currentLine: " << currentLine << endl;
