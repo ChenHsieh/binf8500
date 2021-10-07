@@ -13,6 +13,16 @@
 #include <math.h>
 #include <time.h>
 #include <stdlib.h>
+#include <algorithm>
+
+using namespace std;
+
+// helper functions
+std::string cleanStr(std::string str)
+{
+    str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+    return str;
+}
 
 int main(int argc, char **argv)
 {
@@ -23,7 +33,7 @@ int main(int argc, char **argv)
              << endl
              << endl;
         cout << "Usage: " << argv[0] << " <input1.fasta> <input2.fasta> <match> <mismatch> <gap>" << endl;
-        cout << "Example: " << argv[0] << " Test01.fasta Test02.fasta 1 -1 -1" << endl;
+        cout << "Example: " << argv[0] << " Test01.fasta Test02.fasta 1 0 -1" << endl;
         cout << endl
              << endl
              << endl;
@@ -38,14 +48,121 @@ int main(int argc, char **argv)
     int gap = atoi(argv[5]);
 
     // read file into a string like a lump sum
-    std::stringstream buffer;
-    buffer << myFile1.rdbuf();
-    std::string file_contents1(buffer.str());
-    buffer << myFile2.rdbuf();
-    std::string file_contents2(buffer.str());
-    
-    // get the column size and then row size
+    std::stringstream buffer1;
+    buffer1 << myFile1.rdbuf();
+    std::string file_contents1(buffer1.str());
+    std::stringstream buffer2;
+    buffer2 << myFile2.rdbuf();
+    std::string file_contents2(buffer2.str());
+
+    // get the first file content
     int start = 0;
-    int end = file_contents.find("\n", 0);
-    std::string firstLine = file_contents.substr(start, end - start);
+    int end = file_contents1.find("\n", 0);
+    std::string firstLine1 = file_contents1.substr(start, end - start);
+    start = end + 1;
+    std::string content1 = file_contents1.substr(start, file_contents1.size());
+    cout << "File 1:" << endl;
+    cout << "\tfirstLine1: " << firstLine1 << endl;
+    content1 = cleanStr(content1);
+    cout << "\tcontent1: " << content1 << endl;
+    cout << "\tcontent1 size: " << content1.size() << endl;
+    cout << endl;
+
+    // get the second file content
+    start = 0;
+    end = file_contents2.find("\n", 0);
+    std::string firstLine2 = file_contents2.substr(start, end - start);
+    start = end + 1;
+    std::string content2 = file_contents2.substr(start, file_contents2.size());
+    cout << "File 2:" << endl;
+    cout << "\tfirstLine2: " << firstLine2 << endl;
+    content2 = cleanStr(content2);
+    cout << "\tcontent2: " << content2 << endl;
+    // print size of content2
+    cout << "\tcontent2 size: " << content2.size() << endl;
+
+    // init the matrix
+    int matrix[content1.size() + 1][content2.size() + 1];
+    for (int i = 0; i < content1.size() + 1; i++)
+    {
+        cout << "\t\t";
+        if (i == 0) // fill up the first row
+        {
+
+            for (int j = 0; j < content2.size() + 1; j++)
+            {
+                cout << content1[j] << "\t";
+            }
+        }
+        cout << endl;
+        for (int j = 0; j < content2.size() + 1; j++)
+        {
+            if (i == 0) // fill up the first row
+            {
+
+                matrix[i][j] = j * gap;
+                if (j == 0)
+                {
+                    cout << "\t";
+                }
+            }
+            else if (j == 0) // fill up the first column
+            {
+                cout << content2[i - 1] << "\t";
+                matrix[i][j] = i * gap;
+            }
+            else // actual content
+            {
+                // if the character is the same, beware of the offset
+                if (content1[i - 1] == content2[j - 1])
+                {
+                    matrix[i][j] = matrix[i - 1][j - 1] + match;
+                }
+                else
+                {
+                    matrix[i][j] = std::max(
+                        matrix[i - 1][j] + gap,
+                        std::max(
+                            matrix[i][j - 1] + gap,
+                            matrix[i - 1][j - 1] + mismatch));
+                }
+            }
+            cout << matrix[i][j] << "\t";
+        }
+        cout << endl;
+    }
+    
+    // traverse the matrix to find the alignment
+
+    bool found = false;
+    int i = content1.size();
+    int j = content2.size();
+    vector<string> alignment1;
+    vector<string> alignment2;
+    while (!found)
+    {
+        if (matrix[i][j] == matrix[i - 1][j] - gap)
+        {
+            i--;
+        }
+        else if (matrix[i][j] == matrix[i][j - 1] - gap)
+        {
+            j--;
+        }
+        else if (matrix[i][j] == matrix[i - 1][j - 1] - mismatch)
+        {
+            i--;
+            j--;
+        }
+        else if (matrix[i][j] == matrix[i - 1][j - 1] - match)
+        {
+            i--;
+            j--;
+        }
+        else
+        {
+            cout << "wrong!!!" << endl;
+        }
+        
+    }
 }
