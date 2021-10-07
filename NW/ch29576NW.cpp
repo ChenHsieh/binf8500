@@ -27,7 +27,9 @@ std::string cleanStr(std::string str)
 int main(int argc, char **argv)
 {
     // check input arguments
-    cout << endl<<"Chen's Needleman-Wunsch global alignment implementation" << endl << endl;
+    cout << endl
+         << "Chen's Needleman-Wunsch global alignment implementation" << endl
+         << endl;
     if (argc != 6)
     {
         cout << endl
@@ -84,6 +86,10 @@ int main(int argc, char **argv)
          << endl
          << endl;
 
+    cout << "Scores:" << endl
+         << "Match: " << match << ",  Mismatch: " << mismatch << ",  Gap: " << gap << endl
+         << endl;
+
     // init the matrix
     int matrix[content1.size() + 1][content2.size() + 1];
     for (int i = 0; i < content1.size() + 1; i++)
@@ -135,7 +141,9 @@ int main(int argc, char **argv)
         cout << endl;
     }
 
-    cout << "Alignment score: " << matrix[content1.size()][content2.size()] << endl;
+    cout << endl
+         << "Alignment score: " << matrix[content1.size()][content2.size()] << endl
+         << endl;
     // traverse the matrix to find the alignment
 
     bool found = false;
@@ -194,6 +202,8 @@ int main(int argc, char **argv)
             found = true;
         }
     }
+
+    // TODO // print the alignment with fancy format
     cout << "Alignment 1:\t" << alignment1 << endl;
     cout << "Matching:\t" << matching << endl;
     cout << "Alignment 2:\t" << alignment2 << endl;
