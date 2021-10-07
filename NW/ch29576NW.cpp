@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     std::string firstLine1 = file_contents1.substr(start, end - start);
     start = end + 1;
     std::string content1 = file_contents1.substr(start, file_contents1.size());
-    cout << "File 1:" << endl;
+    cout << "File 1: " << argv[1] << endl;
     cout << "\tfirstLine1: " << firstLine1 << endl;
     content1 = cleanStr(content1);
     cout << "\tcontent1: " << content1 << endl;
@@ -74,12 +74,14 @@ int main(int argc, char **argv)
     std::string firstLine2 = file_contents2.substr(start, end - start);
     start = end + 1;
     std::string content2 = file_contents2.substr(start, file_contents2.size());
-    cout << "File 2:" << endl;
+    cout << "File 2: " << argv[2] << endl;
     cout << "\tfirstLine2: " << firstLine2 << endl;
     content2 = cleanStr(content2);
     cout << "\tcontent2: " << content2 << endl;
     // print size of content2
-    cout << "\tcontent2 size: " << content2.size() << endl;
+    cout << "\tcontent2 size: " << content2.size() << endl
+         << endl
+         << endl;
 
     // init the matrix
     int matrix[content1.size() + 1][content2.size() + 1];
@@ -131,38 +133,85 @@ int main(int argc, char **argv)
         }
         cout << endl;
     }
-    
+
+    cout << "Alignment score: " << matrix[content1.size()][content2.size()] << endl;
     // traverse the matrix to find the alignment
 
     bool found = false;
     int i = content1.size();
     int j = content2.size();
-    vector<string> alignment1;
-    vector<string> alignment2;
+    std::string alignment1 = "";
+    std::string alignment2 = "";
+    std::string matching = "";
+    // std::string alignment1(1, content1.at(i - 1));
+    // std::string alignment2(1, content2.at(j - 1));
+    // std::string matching = "*";
+    // cout << "Alignment 1: " << alignment1 << endl;
+    // cout << "Alignment 2: " << alignment2 << endl;
+    // cout << matrix[i][j] << endl;
+    // i--;
+    // j--;
+    cout << i << ":" << j<<endl;
+
     while (!found)
     {
-        if (matrix[i][j] == matrix[i - 1][j] - gap)
+        cout << matrix[i][j] << endl;
+        cout << matrix[i][j-1] << endl;
+        cout << matrix[i-1][j] << endl;
+        cout << matrix[i-1][j-1] << endl;
+        cout << match << endl;
+        cout << (matrix[i][j] == matrix[i - 1][j - 1] + match) << endl;
+        if (matrix[i][j] == matrix[i - 1][j] + gap)
         {
+
+            alignment1 = content1[i - 1] + alignment1;
+            alignment2 = "-" + alignment2;
+            matching = " " + matching;
             i--;
         }
-        else if (matrix[i][j] == matrix[i][j - 1] - gap)
+        else if (matrix[i][j] == matrix[i][j - 1] + gap)
         {
+
+            alignment1 = "-" + alignment1;
+            alignment2 = content2[j - 1] + alignment2;
+            matching = " " + matching;
             j--;
         }
-        else if (matrix[i][j] == matrix[i - 1][j - 1] - mismatch)
+        else if (matrix[i][j] == matrix[i - 1][j - 1] + mismatch)
         {
+
+            alignment1 = content1[i - 1] + alignment1;
+            alignment2 = content2[j - 1] + alignment2;
+            matching = " " + matching;
             i--;
             j--;
         }
-        else if (matrix[i][j] == matrix[i - 1][j - 1] - match)
+        else if (matrix[i][j] == matrix[i - 1][j - 1] + match)
         {
+
+            alignment1 = content1[i - 1] + alignment1;
+            alignment2 = content2[j - 1] + alignment2;
+            matching = "*" + matching;
             i--;
             j--;
         }
         else
         {
+            cout << i << ":" << j<<endl;
+            cout << "Error: " << matrix[i][j] << endl;
             cout << "wrong!!!" << endl;
+            break;
         }
-        
+        if (i == 0 && j == 0)
+        {
+            found = true;
+        }
+        cout << alignment1 << " ";
+        cout << matching << " ";
+        cout << alignment2 << " ";
+        cout << endl;
     }
+    cout << "Alignment 1:\t" << alignment1 << endl;
+    cout << "Matching:\t" << matching << endl;
+    cout << "Alignment 2:\t" << alignment2 << endl;
 }

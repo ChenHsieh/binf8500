@@ -14,7 +14,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-
 using namespace std;
 
 double getDistance(vector<double> a, vector<double> b)
@@ -199,6 +198,8 @@ void kMeansClustering(vector<vector<double> > data, int k, string fileName, map<
             fout << i << "\t" << j << "\t" << getDistance(bestClusterPoints[i], bestClusterPoints[j]) << endl;
         }
     }
+    cout << endl
+         << endl;
     // cluster point coordinates
     fout << "Cluster point coordinates:" << endl;
     for (int i = 0; i < k; i++)
