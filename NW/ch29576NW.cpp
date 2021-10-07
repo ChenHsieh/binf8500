@@ -27,6 +27,7 @@ std::string cleanStr(std::string str)
 int main(int argc, char **argv)
 {
     // check input arguments
+    cout << endl<<"Chen's Needleman-Wunsch global alignment implementation" << endl << endl;
     if (argc != 6)
     {
         cout << endl
@@ -62,10 +63,10 @@ int main(int argc, char **argv)
     start = end + 1;
     std::string content1 = file_contents1.substr(start, file_contents1.size());
     cout << "File 1: " << argv[1] << endl;
-    cout << "\tfirstLine1: " << firstLine1 << endl;
+    cout << "\theader from file 1: " << firstLine1 << endl;
     content1 = cleanStr(content1);
-    cout << "\tcontent1: " << content1 << endl;
-    cout << "\tcontent1 size: " << content1.size() << endl;
+    cout << "\tcontent from file 1: " << content1 << endl;
+    cout << "\tsize of file 1: " << content1.size() << endl;
     cout << endl;
 
     // get the second file content
@@ -75,11 +76,11 @@ int main(int argc, char **argv)
     start = end + 1;
     std::string content2 = file_contents2.substr(start, file_contents2.size());
     cout << "File 2: " << argv[2] << endl;
-    cout << "\tfirstLine2: " << firstLine2 << endl;
+    cout << "\theader from file 2: " << firstLine2 << endl;
     content2 = cleanStr(content2);
-    cout << "\tcontent2: " << content2 << endl;
+    cout << "\tcontent from file 2: " << content2 << endl;
     // print size of content2
-    cout << "\tcontent2 size: " << content2.size() << endl
+    cout << "\tsize of file 2: " << content2.size() << endl
          << endl
          << endl;
 
@@ -93,7 +94,7 @@ int main(int argc, char **argv)
 
             for (int j = 0; j < content2.size() + 1; j++)
             {
-                cout << content1[j] << "\t";
+                cout << content2[j] << "\t";
             }
         }
         cout << endl;
@@ -110,7 +111,7 @@ int main(int argc, char **argv)
             }
             else if (j == 0) // fill up the first column
             {
-                cout << content2[i - 1] << "\t";
+                cout << content1[i - 1] << "\t";
                 matrix[i][j] = i * gap;
             }
             else // actual content
@@ -143,24 +144,9 @@ int main(int argc, char **argv)
     std::string alignment1 = "";
     std::string alignment2 = "";
     std::string matching = "";
-    // std::string alignment1(1, content1.at(i - 1));
-    // std::string alignment2(1, content2.at(j - 1));
-    // std::string matching = "*";
-    // cout << "Alignment 1: " << alignment1 << endl;
-    // cout << "Alignment 2: " << alignment2 << endl;
-    // cout << matrix[i][j] << endl;
-    // i--;
-    // j--;
-    cout << i << ":" << j<<endl;
 
     while (!found)
     {
-        cout << matrix[i][j] << endl;
-        cout << matrix[i][j-1] << endl;
-        cout << matrix[i-1][j] << endl;
-        cout << matrix[i-1][j-1] << endl;
-        cout << match << endl;
-        cout << (matrix[i][j] == matrix[i - 1][j - 1] + match) << endl;
         if (matrix[i][j] == matrix[i - 1][j] + gap)
         {
 
@@ -197,7 +183,8 @@ int main(int argc, char **argv)
         }
         else
         {
-            cout << i << ":" << j<<endl;
+            // debug
+            cout << i << ":" << j << endl;
             cout << "Error: " << matrix[i][j] << endl;
             cout << "wrong!!!" << endl;
             break;
@@ -206,10 +193,6 @@ int main(int argc, char **argv)
         {
             found = true;
         }
-        cout << alignment1 << " ";
-        cout << matching << " ";
-        cout << alignment2 << " ";
-        cout << endl;
     }
     cout << "Alignment 1:\t" << alignment1 << endl;
     cout << "Matching:\t" << matching << endl;
