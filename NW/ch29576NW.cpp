@@ -2,12 +2,12 @@
 // Student: Chen Hsieh
 // ID: ch29576, 811744663
 
+// script for testing
 // g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW News1.fasta News2.fasta 1 -1 -1
 // g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW RpoB-E.coli.fasta RpoB-B.subtilis.fasta 1 -1 -1
 // g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW HIV1a.fasta HIV1b.fasta 1 -1 -1
-
-// time ./NW HIV1a.fasta HIV1b.fasta 1 -1 -1
 // g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW M.genitaliumM2321.fasta M.genitaliumG37.fasta 1 -1 -1
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -18,6 +18,13 @@ using namespace std;
 // helper functions
 std::string cleanStr(std::string str)
 {
+    // for(unsigned int i = 0; i <= str.length(); i++) // buggy, end of file not handled
+    // {
+    //     if(str[i] == '\n' || str[i] == '\r')
+    //     {
+    //         str.erase(i, 1);
+    //     }
+    // }
     str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
     return str;
 }
@@ -26,7 +33,7 @@ int getAlignmentNumber(std::string str)
 {
     int nonGapNum = 0;
     int N = str.length();
-    for (int i = 0; i < N; i++)
+    for (unsigned i = 0; i < N; i++)
     {
         // cout << str[i];
         // cout << (str[i] == '-') << endl;
@@ -119,7 +126,7 @@ int main(int argc, char **argv)
     // T = (int *)malloc(12*sizeof(int));
     cout << "Initializing matrix...done" << endl
          << endl;
-    for (int i = 0; i < content1.size() + 1; i++)
+    for (unsigned i = 0; i < content1.size() + 1; i++)
     {
         // cout << "Initializing row " << i << "..." << endl;
         // cout << "\t\t";
@@ -132,7 +139,7 @@ int main(int argc, char **argv)
         //     }
         // }
         // cout << endl;
-        for (int j = 0; j < content2.size() + 1; j++)
+        for (unsigned j = 0; j < content2.size() + 1; j++)
         {
             // cout << "Initializing col " << j << "..." << endl;
             if (i == 0) // fill up the first row
@@ -231,7 +238,7 @@ int main(int argc, char **argv)
     int alignment_length = alignment1.length();
     int count1 = 1;
     int count2 = 1;
-    for (int i = 0; i < alignment_length / 60; i++)
+    for (unsigned i = 0; i < alignment_length / 60; i++)
     {
 
         cout
