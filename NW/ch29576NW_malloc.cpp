@@ -2,14 +2,8 @@
 // Student: Chen Hsieh
 // ID: ch29576, 811744663
 
+// g++ -std=c++11 -o ch29576NW_malloc -Wall ch29576NW_malloc.cpp;time ./ch29576NW_malloc Test01.fasta Test02.fasta 1 -1 -1
 
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW News1.fasta News2.fasta 1 -1 -1
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW RpoB-E.coli.fasta RpoB-B.subtilis.fasta 1 -1 -1
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW HIV1a.fasta HIV1b.fasta 1 -1 -1
-
-
-time ./NW HIV1a.fasta HIV1b.fasta 1 -1 -1
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW M.genitaliumM2321.fasta M.genitaliumG37.fasta 1 -1 -1
 #include <iostream>
 #include <fstream>
 #include <sstream>
