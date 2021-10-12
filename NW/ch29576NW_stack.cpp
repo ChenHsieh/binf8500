@@ -3,11 +3,9 @@
 // ID: ch29576, 811744663
 
 // script for testing
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW News1.fasta News2.fasta 1 -1 -1
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW RpoB-E.coli.fasta RpoB-B.subtilis.fasta 1 -1 -1
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW HIV1a.fasta HIV1b.fasta 1 -1 -1
-// g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp;time ./ch29576NW M.genitaliumM2321.fasta M.genitaliumG37.fasta 1 -1 -1
 
+// g++ -std=c++11 -o ch29576NW_stack -Wall ch29576NW_stack.cpp;time ./ch29576NW_stack HIV1a.fasta HIV1b.fasta 1 -1 -1
+// g++ -std=c++11 -o ch29576NW_stack -Wall ch29576NW_stack.cpp;time ./ch29576NW_stack RpoB-E.coli.fasta RpoB-B.subtilis.fasta 1 -1 -1
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -17,7 +15,7 @@ using namespace std;
 // helper functions
 std::string cleanStr(std::string str)
 {
-    // for(unsigned int i = 0; i <= str.length(); i++) // buggy, end of file not handled, switch to this one for sapelo2 
+    // for(unsigned int i = 0; i <= str.length(); i++) // buggy, end of file not handled, switch to this one for sapelo2
     // {
     //     if(str[i] == '\n' || str[i] == '\r')
     //     {
@@ -117,9 +115,8 @@ int main(int argc, char **argv)
 
     // init the matrix
     cout << "Initializing matrix..." << endl;
-    int row = content2.size() + 1;
-    int col = content1.size() + 1;
-    int *matrix = (int *)malloc((row * col) * sizeof(int));
+    
+    int matrix[content1.size() + 1][content2.size() + 1];
     cout << "Initializing matrix...done" << endl
          << endl;
     for (unsigned i = 0; i < content1.size() + 1; i++)
@@ -139,7 +136,7 @@ int main(int argc, char **argv)
             if (i == 0) // fill up the first row
             {
 
-                matrix[j] = j * gap;
+                matrix[i][j] = j * gap;
                 // if (j == 0)
                 // {
                 //     cout << "\t";
@@ -148,31 +145,31 @@ int main(int argc, char **argv)
             else if (j == 0) // fill up the first column
             {
                 // cout << content1[i - 1] << "\t";
-                matrix[i * row] = i * gap;
+                matrix[i][j] = i * gap;
             }
             else // actual content
             {
                 // if the character is the same, beware of the offset
                 if (content1[i - 1] == content2[j - 1])
                 {
-                    matrix[i * row + j] = matrix[(i - 1) * row + (j - 1)] + match;
+                    matrix[i][j] = matrix[i - 1][j - 1] + match;
                 }
                 else
                 {
-                    matrix[i * row + j] = std::max(
-                        matrix[(i - 1) * row + j] + gap,
+                    matrix[i][j] = std::max(
+                        matrix[i - 1][j] + gap,
                         std::max(
-                            matrix[i * row + j - 1] + gap,
-                            matrix[(i - 1) * row + (j - 1)] + mismatch));
+                            matrix[i][j - 1] + gap,
+                            matrix[i - 1][j - 1] + mismatch));
                 }
             }
-            // cout << matrix[i * row + j] << "\t";
+            // cout << matrix[i][j] << "\t";
         }
         // cout << endl;
     }
     cout << "matrix calc done" << endl;
     cout << endl
-         << "Alignment score: " << matrix[content1.size() * row + content2.size()] << endl
+         << "Alignment score: " << matrix[content1.size()][content2.size()] << endl
          << endl;
     // traverse the matrix to find the alignment
 
@@ -185,21 +182,21 @@ int main(int argc, char **argv)
     //  backtracing
     while (!found)
     {
-        if (matrix[(i)*row + (j)] == matrix[(i - 1) * row + (j)] + gap)
+        if (matrix[i][j] == matrix[i-1][j] + gap)
         {
             alignment1 = content1[i - 1] + alignment1;
             alignment2 = "-" + alignment2;
             matching = " " + matching;
             i--;
         }
-        else if (matrix[(i)*row + (j)] == matrix[(i)*row + (j - 1)] + gap)
+        else if (matrix[i][j] == matrix[i][j-1] + gap)
         {
             alignment1 = "-" + alignment1;
             alignment2 = content2[j - 1] + alignment2;
             matching = " " + matching;
             j--;
         }
-        else if (matrix[(i)*row + (j)] == matrix[(i - 1) * row + (j - 1)] + mismatch)
+        else if (matrix[i][j] == matrix[i - 1][j - 1] + mismatch)
         {
             alignment1 = content1[i - 1] + alignment1;
             alignment2 = content2[j - 1] + alignment2;
@@ -207,7 +204,7 @@ int main(int argc, char **argv)
             i--;
             j--;
         }
-        else if (matrix[(i)*row + (j)] == matrix[(i - 1) * row + (j - 1)] + match)
+        else if (matrix[i][j] == matrix[i - 1][j - 1] + match)
         {
             alignment1 = content1[i - 1] + alignment1;
             alignment2 = content2[j - 1] + alignment2;
@@ -219,7 +216,7 @@ int main(int argc, char **argv)
         {
             // debug
             cout << i << ":" << j << endl;
-            cout << "Error: " << matrix[(i)*row + (j)] << endl;
+            cout << "Error: " << matrix[i][j] << endl;
             break;
         }
         if (i == 0 && j == 0)
