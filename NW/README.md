@@ -1,4 +1,4 @@
-# NW (WIP)
+# Needleman-Wunsch global alignment implementation
 
 `ch29576NW.cpp` is the final submission for this assignment.
 
@@ -21,37 +21,36 @@ time ./ch29576NW Test01.fasta Test02.fasta 1 -1 -1
 
 
 ```
-Needleman-Wunsch global alignment
 
+Chen's Needleman-Wunsch global alignment implementation
 
-Sequence 1 (Test01.fasta):
+File 1: Test01.fasta
+        header from file 1:     >test01
+        content from file 1:    ACGCGATCGCGCAAATCAGACCTAGCATCGCACTTTCGACAGCATCAGCGACATCGATCGATCGTACGATCGTAC
+        size of file 1: 75
 
-ACGCGATCGCGCAAATCAGACCTAGCATCGCACTTTCGACAGCATCAGCGACATCGATCG
-ATCGTACGATCGTAC
-
-Length:  75
-
-
-Sequence 2 (Test02.fasta):
-
-ACGCGATTGCGCAAATCAGACCGCATCGCACTATCGACAGTGCATCAGCGTTCTACGGAT
-CGATCGCCTACGATCGTAC
-
-Length:  79
+File 2: Test02.fasta
+        header from file 2:     >test01
+        content from file 2:    ACGCGAttgCGCAAATCAGACCgCATCGCACTaTCGACAgtGCATCAGCGttctacgGATCGATCGccTACGATCGTAC
+        size of file 2: 79
 
 
 Scores:
-  Match: 1,  Mismatch: 0,  Gap: -1
+Match: 1,  Mismatch: -1,  Gap: -1
 
+Initializing matrix...
+Initializing matrix...done
 
-Alignment score: 60
-Alignment:
+matrix calc done
 
-       1: ACGCGATCGCGCAAATCAGACCTAGCATCGCACTTTCGACA--GCATCAGCG-AC-ATCG
-          ******* **************  ********** ******  *********  * *  *
-       1: ACGCGATTGCGCAAATCAGACC--GCATCGCACTATCGACAGTGCATCAGCGTTCTACGG
+Alignment score: 45
 
-      57: ATCGATCG--TACGATCGTAC
-          ********  ***********
-      59: ATCGATCGCCTACGATCGTAC
+                1       ACGCGATCGCGCAAATCAGACCTAGCATCGCACTTTCGACA--GCATCAGCGACATC--G
+                        ******   *************   ********* ******  *********       *
+                1       ACGCGAttgCGCAAATCAGACCg--CATCGCACTaTCGACAgtGCATCAGCGttctacgG
+
+                57      ATCGATCG--TACGATCGTAC
+                        ********  ***********
+                59      ATCGATCGccTACGATCGTAC
+
 ```

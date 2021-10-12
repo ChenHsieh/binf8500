@@ -17,7 +17,7 @@ using namespace std;
 // helper functions
 std::string cleanStr(std::string str)
 {
-    // for(unsigned int i = 0; i <= str.length(); i++) // buggy, end of file not handled, switch to this one for sapelo2 
+    // for(unsigned int i = 0; i <= str.length(); i++) // buggy, end of file not handled, switch to this one for sapelo2
     // {
     //     if(str[i] == '\n' || str[i] == '\r')
     //     {
@@ -175,7 +175,6 @@ int main(int argc, char **argv)
          << "Alignment score: " << matrix[content1.size() * row + content2.size()] << endl
          << endl;
     // traverse the matrix to find the alignment
-
     bool found = false;
     int i = content1.size();
     int j = content2.size();
@@ -234,7 +233,6 @@ int main(int argc, char **argv)
     int count2 = 1;
     for (unsigned i = 0; i < alignment_length / 60; i++)
     {
-
         cout
             << "\t\t" << count1 << "\t" << alignment1.substr(i * 60, 60) << endl;
         cout << "\t\t"
@@ -243,11 +241,6 @@ int main(int argc, char **argv)
              << endl;
         count1 += getAlignmentNumber(alignment1.substr(i * 60, 60));
         count2 += getAlignmentNumber(alignment2.substr(i * 60, 60));
-        // if (i % 60 == 0)
-        // {
-        //     cout << endl;
-        // }
-        // cout << alignment1[i] << "\t" << alignment2[i] << "\t" << matching[i] << endl;
     }
     cout << "\t\t" << count1 << "\t" << alignment1.substr((alignment_length / 60) * 60, alignment_length) << endl;
     cout << "\t\t"
