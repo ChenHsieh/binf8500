@@ -8,7 +8,7 @@
 g++ -std=c++11 -o ch29576NW -Wall ch29576NW.cpp
 ```
 
-tested on M1 mac
+tested on M1 and intel mac
 
 ## usage and testing
 
