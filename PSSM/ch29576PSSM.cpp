@@ -57,13 +57,13 @@ int main(int argc, char **argv)
     int start = 0;
     int end = file_contents2.find("\n", 0);
     header = file_contents2.substr(start, end);
-    start= end +1;
+    start = end + 1;
     float whole_length = file_contents2.size();
     cout << whole_length << endl;
-    sequence = file_contents2.substr(start,whole_length);
-    
+    sequence = file_contents2.substr(start, whole_length);
+
     float gc_count = 0;
-    
+
     for (unsigned i = 0; i < whole_length; i++)
     {
         if (sequence[i] == 'G' || sequence[i] == 'C')
@@ -71,6 +71,7 @@ int main(int argc, char **argv)
             gc_count++;
         }
     }
+    // TODO change the whole_length to the sum of (AGCT), since there might be ambiguous characters
     float gc_content = (gc_count / whole_length) / 2;
     float q[4];
     q[0] = 0.5 - gc_content;
@@ -81,7 +82,7 @@ int main(int argc, char **argv)
     // get the alignment file content
     start = 0;
     end = file_contents1.find("\n", 0);
-    
+
     unsigned lineNum = 0;
     vector<std::string> seqs;
     while (end != std::string::npos)
@@ -140,7 +141,7 @@ int main(int argc, char **argv)
         for (j = 0; j < 4; j++)
         {
             probability_matrix[i][j] = (frequency_matrix[i][j] + 0.25) / (lineNum + 1);
-            pssm[i][j] = log(probability_matrix[i][j]);
+            pssm[i][j] = log2f(probability_matrix[i][j]) - log2f(q[j]);
         }
     }
 
@@ -171,24 +172,61 @@ int main(int argc, char **argv)
     cout << endl;
 
     // still different
-    for (j = 0; j < 4; j++)
-    {
-        cout << q[j] << endl;
-    }
+    // for (j = 0; j < 4; j++)
+    // {
+    //     cout << q[j] << endl;
+    // }
     cout << "PSSM:" << endl
          << "pos.\tA\tC\tG\tT" << endl;
-
     for (i = 0; i < alignment_length; i++)
     {
         cout << i + 1 << "\t";
         for (j = 0; j < 4; j++)
         {
-
-            cout << std::fixed << setprecision(3) << pssm[i][j] - log(q[j])
-                 << "\t";
+            // pssm[i][j] = pssm[i][j] - log2f(q[j]);
+            cout
+                // << std::fixed << setprecision(3)
+                << pssm[i][j] << "\t";
         }
         cout << endl;
     }
     cout << endl
-         << "Training set motif scores:" << endl;
+         << "Training set motif scores:"
+         << "\n";
+    float min_input_score = 10000;
+    for (i = 0; i < lineNum; i++)
+    {
+        float input_score = 0;
+        for (j = 0; j < alignment_length; j++)
+        {
+            // current base
+            current_base = toupper(seqs[i][j]);
+            if (current_base == "A")
+            {
+                input_score += pssm[j][0];
+            }
+            else if (current_base == "C")
+            {
+                input_score += pssm[j][1];
+            }
+            else if (current_base == "G")
+            {
+                input_score += pssm[j][2];
+            }
+            else if (current_base == "T")
+            {
+                input_score += pssm[j][3];
+            }
+            else
+            {
+                cout << "something's wierd in the alignment file" << endl;
+            }
+        }
+        cout << seqs[i] << "\t" << input_score << "\n ";
+        if (input_score < min_input_score)
+        {
+            min_input_score = input_score;
+        }
+    }
+    cout << min_input_score << "\n";
 }
