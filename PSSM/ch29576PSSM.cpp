@@ -4,24 +4,29 @@
 
 // script for testing
 // g++ -std=c++11 -o ch29576PSSM -Wall ch29576PSSM.cpp; time ./ch29576PSSM FruR.txt ecoK12-MG1655.fasta
-// g++ -std=c++11 -O3 -o ch29576PSSM -Wall ch29576PSSM.cpp; time ./ch29576PSSM FruR.txt ecoK12-MG1655.fasta
+// g++ -std=c++11 -O3 -o ch29576PSSM -Wall ch29576PSSM.cpp; time ./ch29576PSSM FruR.txt ecoK12-MG1655.fasta > zzz.txt;
+// g++ -std=c++11 -O3 -o ch29576PSSM -Wall ch29576PSSM.cpp; time ./ch29576PSSM sigma54.txt ecoK12-MG1655.fasta > zzz.txt;
+// g++ -std=c++11 -O3 -o ch29576PSSM -Wall ch29576PSSM.cpp; time ./ch29576PSSM FruR.txt Scel-So0157-2.fasta > zzz.txt;
+// g++ -std=c++11 -O3 -o ch29576PSSM -Wall ch29576PSSM.cpp; time ./ch29576PSSM sigma54.txt Scel-So0157-2.fasta > zzz.txt;
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <algorithm>
 #include <math.h>
-// #include <iomanip>
+#include <iomanip>
+
 using namespace std;
 
 int main(int argc, char **argv)
 {
+    // timer
     clock_t Start = 0;
-    // check input arguments
+    
     cout << endl
          << "Chen's PSSM implementation" << endl
          << endl;
+    // check input arguments
     if (argc < 3)
     {
         cout << endl
@@ -62,6 +67,7 @@ int main(int argc, char **argv)
     // remove all new line char
     sequence.erase(std::remove(sequence.begin(), sequence.end(), '\n'),
                    sequence.end());
+
     // get length
     whole_length = sequence.length();
     float gc_count = 0;
@@ -90,24 +96,28 @@ int main(int argc, char **argv)
         }
     }
 
-    cout << "non regular base: " << non_regular_base << endl;
+    cout << "non regular bases: " << non_regular_base << endl;
     float gc_content = (gc_count / sequence_num) / 2;
+    cout << "GC content: " << gc_content *2 << endl;
+    
     float q[4];
     q[0] = 0.5 - gc_content;
     q[1] = gc_content;
     q[2] = gc_content;
     q[3] = 0.5 - gc_content;
     cerr << "Time after getting GC content: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+    
     // get the alignment file content
     start = 0;
     end = file_contents1.find("\n", 0);
-
     unsigned lineNum = 0;
     vector<std::string> seqs;
     std::string alignment_seq;
     while (end != std::string::npos)
     {
         alignment_seq = file_contents1.substr(start, end - start);
+        std::for_each(alignment_seq.begin(), alignment_seq.end(), [](char &c)
+                      { c = ::toupper(c); });
         seqs.push_back(alignment_seq);
         start = end + 1;
         end = file_contents1.find("\n", start);
@@ -124,7 +134,7 @@ int main(int argc, char **argv)
     float input_score = 0;
     unsigned i, j;
     std::string current_base;
-    // get the numbers
+    // get the probabilities
     for (i = 0; i < alignment_length; i++)
     {
         // init matrix current row
@@ -136,7 +146,7 @@ int main(int argc, char **argv)
         for (j = 0; j < lineNum; j++)
         {
             // current base
-            current_base = toupper(seqs[j][i]);
+            current_base = seqs[j][i];
             if (current_base == "A")
             {
                 frequency_matrix[i][0]++;
@@ -191,11 +201,6 @@ int main(int argc, char **argv)
     }
     cout << endl;
 
-    // still different
-    // for (j = 0; j < 4; j++)
-    // {
-    //     cout << q[j] << endl;
-    // }
     cout << "PSSM:" << endl
          << "pos.\tA\tC\tG\tT" << endl;
     for (i = 0; i < alignment_length; i++)
@@ -220,7 +225,7 @@ int main(int argc, char **argv)
         input_score = 0;
         for (int j = 0; j < alignment_length; j++)
         {
-            current_base = toupper(seqs[i][j]);
+            current_base = seqs[i][j];
             if (current_base == "A")
             {
                 input_score += pssm[j][0];
@@ -256,13 +261,12 @@ int main(int argc, char **argv)
     {
         float scoreCutoff = atoi(argv[3]);
         cout << "However, score cutoff was specified by user: " << scoreCutoff << endl;
-        min_input_score =scoreCutoff; 
+        min_input_score = scoreCutoff;
     }
     cerr << "Time after determining threshold: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
     cout << "Matches with score " << min_input_score << " or higher found in " << argv[2] << " (length " << sequence_num << "bp):"
          << "\n\n";
 
-    cout << sequence.size() << endl;
     //  let the sliding window begin
     cout << "Start\tEnd\tStrand\tSequence\tScore" << endl;
 
@@ -272,13 +276,11 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < sequence_num - alignment_length; i++)
     {
-        // current new base
-
         input_score = 0;
         complementary_input_score = 0;
         for (int j = 0; j < alignment_length; j++)
         {
-            current_base = toupper(sequence[i + j]);
+            current_base = sequence[i + j];
             if (current_base == "A")
             {
                 input_score += pssm[j][0];
@@ -306,9 +308,6 @@ int main(int argc, char **argv)
         }
 
         // cout << input_score << endl;
-
-        //         Start   End     Strand  Sequence        Score
-        //          4528    4543    +       GGTGAAACGTTTTATT         16.747
         if (input_score >= min_input_score)
         {
             cout << i + 1 << "\t" << i + alignment_length << "\t"
@@ -321,7 +320,6 @@ int main(int argc, char **argv)
                  << "-"
                  << "\t" << sequence.substr(i, alignment_length) << "\t" << complementary_input_score << "\n";
         }
-        // break;
     }
     cerr << "Time after scanning the whole sequence: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
 }
