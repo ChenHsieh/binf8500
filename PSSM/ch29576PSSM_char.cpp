@@ -55,21 +55,24 @@ int main(int argc, char **argv)
     cerr << "Time after reading input: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
     // get gc content
     std::string header;
-    std::string sequence = "";
+    std::string raw_sequence = "";
     int start = 0;
     int end = file_contents2.find("\n", 0);
     header = file_contents2.substr(start, end);
     start = end + 1;
 
     float whole_length = file_contents2.size();
-
-    sequence = file_contents2.substr(start, whole_length - start);
+    raw_sequence = file_contents2.substr(start, whole_length - start);
     // remove all new line char
-    sequence.erase(std::remove(sequence.begin(), sequence.end(), '\n'),
-                   sequence.end());
+    raw_sequence.erase(std::remove(raw_sequence.begin(), raw_sequence.end(), '\n'),
+                   raw_sequence.end());
+    char* sequence = &*raw_sequence.begin();
+    
+    
+    
 
     // get length
-    whole_length = sequence.length();
+    whole_length = raw_sequence.length();
     
     float gc_count = 0;
     int sequence_num = 0;
@@ -313,13 +316,15 @@ int main(int argc, char **argv)
         {
             cout << i + 1 << "\t" << i + alignment_length << "\t"
                  << "+"
-                 << "\t" << sequence.substr(i, alignment_length) << "\t" << input_score << "\n";
+                 << "\t" << raw_sequence.substr(i, alignment_length) 
+                 << "\t" << input_score << "\n";
         }
         if (complementary_input_score >= min_input_score)
         {
             cout << i + 1 << "\t" << i + alignment_length << "\t"
                  << "-"
-                 << "\t" << sequence.substr(i, alignment_length) << "\t" << complementary_input_score << "\n";
+                 << "\t" << raw_sequence.substr(i, alignment_length) 
+                 << "\t" << complementary_input_score << "\n";
         }
     }
     cerr << "Time after scanning the whole sequence: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
