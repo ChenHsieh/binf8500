@@ -18,44 +18,42 @@ int main(int argc, char **argv)
 {
     // timer
     clock_t Start = 0;
-    
+
     cout << endl
-         << "Chen's PSSM implementation" << endl
+         << "Chen's Simple Gibbs motif sampler output:" << endl
          << endl;
     // check input arguments
 
-
-Usage:  Gibbs InputFile MotifLength
-
-InputFile: sequences in FASTA format.
-MotifLength: estimated length of the motif.
+    // Usage:
+    //     Gibbs InputFile MotifLength
 
     if (argc < 3)
     {
         cout << endl
              << endl
              << endl
-             << "Usage: " << argv[0] << " <AlignmentFile> <SequenceFile> [ScoreCutoff]" << endl
-             << "Example: " << argv[0] << " FruR.txt ecoK12-MG1655.fasta" << endl
+             << "Usage: " << argv[0] << " <InputFile> <MotifLength>" << endl
+             << "Example: " << argv[0] << " E.coliRpoN-sequences-6-300nt.fasta 30" << endl
+             << "InputFile : sequences in FASTA format." << endl
+             << "MotifLength : estimated length of the motif." << endl
              << endl
              << endl
              << endl;
         exit(1);
     }
-
-    // init variables
-    std::ifstream alignmentFile(argv[1]);
-    std::ifstream sequenceFile(argv[2]);
+    // read input and init variables
+    cout << "Input File: " << argv[1] << endl;
+    cout << "Initial Motif Length: " << argv[2] << endl;
+    std::ifstream sequenceFile(argv[1]);
+    int motifLength = atoi(argv[2]);
 
     // read file into a string like a lump sum
-    std::stringstream buffer1;
-    buffer1 << alignmentFile.rdbuf();
-    std::string file_contents1(buffer1.str());
-    std::stringstream buffer2;
-    buffer2 << sequenceFile.rdbuf();
-    std::string file_contents2(buffer2.str());
+    std::stringstream buffer;
+    buffer << sequenceFile.rdbuf();
+    std::string file_contents(buffer.str());
     cout << "read file complete" << endl;
     cerr << "Time after reading input: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+
     // get gc content
     std::string header;
     std::string sequence = "";
@@ -73,7 +71,7 @@ MotifLength: estimated length of the motif.
 
     // get length
     whole_length = sequence.length();
-    
+
     float gc_count = 0;
     int sequence_num = 0;
     int non_regular_base = 0;
@@ -102,15 +100,15 @@ MotifLength: estimated length of the motif.
 
     cout << "non regular bases: " << non_regular_base << endl;
     float gc_content = (gc_count / sequence_num) / 2;
-    cout << "GC content: " << gc_content *2 << endl;
-    
+    cout << "GC content: " << gc_content * 2 << endl;
+
     float q[4];
     q[0] = 0.5 - gc_content;
     q[1] = gc_content;
     q[2] = gc_content;
     q[3] = 0.5 - gc_content;
     cerr << "Time after getting GC content: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
-    
+
     // get the alignment file content
     start = 0;
     end = file_contents1.find("\n", 0);
@@ -140,7 +138,7 @@ MotifLength: estimated length of the motif.
     std::string current_base;
     // get the probabilities
     for (i = 0; i < alignment_length; i++)
-    {
+    {   
         // init matrix current row
         for (j = 0; j < 4; j++)
         {
@@ -325,5 +323,9 @@ MotifLength: estimated length of the motif.
                  << "\t" << sequence.substr(i, alignment_length) << "\t" << complementary_input_score << "\n";
         }
     }
+    // print this
+    //      Final motif length:   31
+    //  Final score:          106.646372
+
     cerr << "Time after scanning the whole sequence: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
 }
