@@ -11,6 +11,8 @@
 #include <vector>
 #include <math.h>
 #include <iomanip>
+#include <vector>
+#include <map>
 
 using namespace std;
 
@@ -19,7 +21,7 @@ int main(int argc, char **argv)
     // timer
     clock_t Start = 0;
 
-    cout << endl
+    cout << std::fixed << setprecision(3) << endl
          << "Chen's Simple Gibbs motif sampler output:" << endl
          << endl;
     // check input arguments
@@ -54,155 +56,130 @@ int main(int argc, char **argv)
     cout << "read file complete" << endl;
     cerr << "Time after reading input: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
 
-    // get gc content
-    std::string header;
+    // get each input sequence and calculate  gc content
+    unsigned rowSize = 0;
+    std::string header = "";
     std::string sequence = "";
-    int start = 0;
-    int end = file_contents2.find("\n", 0);
-    header = file_contents2.substr(start, end);
-    start = end + 1;
+    map<string, string> input_seqs;
+    // map<string, double> gc_content;
+    double gc_content = 0;
 
-    float whole_length = file_contents2.size();
+    vector<string> seq_names;
+    vector<string> seq_seqs;
+    vector<vector<int> > seq_seqs_transformed;
+    vector<vector<double> > seq_gc;
+    int start = 1;
+    int end = 0;
 
-    sequence = file_contents2.substr(start, whole_length - start);
-    // remove all new line char
-    sequence.erase(std::remove(sequence.begin(), sequence.end(), '\n'),
-                   sequence.end());
-
-    // get length
-    whole_length = sequence.length();
-
-    float gc_count = 0;
-    int sequence_num = 0;
-    int non_regular_base = 0;
-    int newline_char_num = 0;
-    // count GC content
-    for (unsigned i = 0; i < whole_length; i++)
-    {
-        if (sequence[i] == '\n')
-        {
-            newline_char_num++;
-        }
-        else if (sequence[i] == 'G' || sequence[i] == 'C')
-        {
-            gc_count++;
-            sequence_num++;
-        }
-        else if (sequence[i] == 'T' || sequence[i] == 'A')
-        {
-            sequence_num++;
-        }
-        else
-        {
-            non_regular_base++;
-        }
-    }
-
-    cout << "non regular bases: " << non_regular_base << endl;
-    float gc_content = (gc_count / sequence_num) / 2;
-    cout << "GC content: " << gc_content * 2 << endl;
-
-    float q[4];
-    q[0] = 0.5 - gc_content;
-    q[1] = gc_content;
-    q[2] = gc_content;
-    q[3] = 0.5 - gc_content;
-    cerr << "Time after getting GC content: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
-
-    // get the alignment file content
-    start = 0;
-    end = file_contents1.find("\n", 0);
-    unsigned lineNum = 0;
-    vector<std::string> seqs;
-    std::string alignment_seq;
     while (end != std::string::npos)
     {
-        alignment_seq = file_contents1.substr(start, end - start);
-        std::for_each(alignment_seq.begin(), alignment_seq.end(), [](char &c)
-                      { c = ::toupper(c); });
-        seqs.push_back(alignment_seq);
+        end = file_contents.find("\n", start);
+        header = file_contents.substr(start, end - start);
         start = end + 1;
-        end = file_contents1.find("\n", start);
-        lineNum++;
-    }
-    cout << lineNum << " sequences in the alignemnt file" << endl
-         << endl;
+        end = file_contents.find(">", start);
 
-    const unsigned alignment_length = seqs[0].size();
+        sequence = file_contents.substr(start, end - start);
+        start = end + 1;
+        sequence.erase(std::remove(sequence.begin(), sequence.end(), '\n'),
+                       sequence.end());
+        rowSize++;
+        // cout << rowSize << endl;
+        // cout << header << endl;
+        // cout << sequence << endl;
+        input_seqs[header] = sequence;
+        seq_names.push_back(header);
+        seq_seqs.push_back(sequence);
+
+        // calculate gc content and transform into number
+        int gc_count = 0;
+
+        // "pos.\tA\tC\tG\tT"
+        // 0 A
+        // 1 C
+        // 2 G
+        // 3 T
+        // 4 others
+        int seq_length = sequence.length();
+        vector<int> seq_transformed(seq_length, 0);
+        for (int i = 0; i < sequence.length(); i++)
+        {
+            if (sequence[i] == 'G')
+            {
+                seq_transformed[i] = 2;
+                gc_count++;
+            }
+            else if (sequence[i] == 'C')
+            {
+                seq_transformed[i] = 1;
+                gc_count++;
+            }
+            else if (sequence[i] == 'A')
+            {
+                seq_transformed[i] = 0;
+            }
+            else if (sequence[i] == 'T')
+            {
+                seq_transformed[i] = 3;
+            }
+            else
+            {
+                seq_transformed[i] = 4;
+            }
+        }
+        gc_content = ((double)gc_count / (double)seq_length) / 2;
+        vector<double> q{(0.5 - gc_content), gc_content, gc_content, (0.5 - gc_content)};
+        seq_gc.push_back(q);
+
+        // gc_content[header] = (double)gc_count / sequence.length();
+        seq_seqs_transformed.push_back(seq_transformed);
+    }
+
+    // get initial motif list according to motif length
+    vector<vector<int> > motif_list;
+    for (int i = 0; i < seq_seqs_transformed.size(); i++)
+    {
+        vector<int> motif_list_i;
+        int R = round(drand48() * (seq_seqs_transformed[i].size() - motifLength + 1));
+        for (int j = 0; j < motifLength; j++)
+        {
+            motif_list_i.push_back(seq_seqs_transformed[i][R + j]);
+        }
+        motif_list.push_back(motif_list_i);
+    }
+    cout << "motif list generated" << endl;
+    cerr << "Time after motif list generation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+
+    // calculate pssm
+    int current_background_seq_index = 0;
+    unsigned int sequence_number = rowSize - 1;
+    const unsigned alignment_length = motifLength;
     int frequency_matrix[alignment_length][4];
     float probability_matrix[alignment_length][4];
     float pssm[alignment_length][4];
-    float complementary_pssm[alignment_length][4];
-    float input_score = 0;
     unsigned i, j;
-    std::string current_base;
+    int current_base;
     // get the probabilities
     for (i = 0; i < alignment_length; i++)
-    {   
+    {
         // init matrix current row
         for (j = 0; j < 4; j++)
         {
             frequency_matrix[i][j] = 0;
         }
         // fill in the count by going through each aligned sequence
-        for (j = 0; j < lineNum; j++)
+        for (j = 0; j < sequence_number; j++)
         {
             // current base
-            current_base = seqs[j][i];
-            if (current_base == "A")
-            {
-                frequency_matrix[i][0]++;
-            }
-            else if (current_base == "C")
-            {
-                frequency_matrix[i][1]++;
-            }
-            else if (current_base == "G")
-            {
-                frequency_matrix[i][2]++;
-            }
-            else if (current_base == "T")
-            {
-                frequency_matrix[i][3]++;
-            }
-            else
-            {
-                cout << "something's wierd in the alignment file" << endl;
-            }
+            frequency_matrix[i][seq_seqs_transformed[j][i]]++;
         }
+        // calculate the probabilities
         for (j = 0; j < 4; j++)
         {
-            probability_matrix[i][j] = (frequency_matrix[i][j] + 0.25) / (lineNum + 1);
-            pssm[i][j] = log2f(probability_matrix[i][j]) - log2f(q[j]);
+            probability_matrix[i][j] = (frequency_matrix[i][j] + 0.25) / (sequence_number + 1);
+            pssm[i][j] = log2f(probability_matrix[i][j]) - log2f(seq_gc[current_background_seq_index][j]);
         }
     }
-    cerr << "Time after PSSM calculation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
-    // printint matrixs
-    cout << "frequency matrix:" << endl
-         << "pos.\tA\tC\tG\tT" << endl;
-    for (i = 0; i < alignment_length; i++)
-    {
-        cout << i + 1 << "\t";
-        for (j = 0; j < 4; j++)
-        {
-            cout << std::fixed << setprecision(3) << frequency_matrix[i][j] << "\t";
-        }
-        cout << endl;
-    }
-    cout << endl;
-    cout << "probability matrix:" << endl
-         << "pos.\tA\tC\tG\tT" << endl;
-    for (i = 0; i < alignment_length; i++)
-    {
-        cout << i + 1 << "\t";
-        for (j = 0; j < 4; j++)
-        {
-            cout << std::fixed << setprecision(3) << probability_matrix[i][j] << "\t";
-        }
-        cout << endl;
-    }
-    cout << endl;
-
+    // we do not need the complementary matrix this time
     cout << "PSSM:" << endl
          << "pos.\tA\tC\tG\tT" << endl;
     for (i = 0; i < alignment_length; i++)
@@ -210,122 +187,83 @@ int main(int argc, char **argv)
         cout << i + 1 << "\t";
         for (j = 0; j < 4; j++)
         {
-            complementary_pssm[alignment_length - 1 - i][3 - j] = pssm[i][j];
+            // complementary_pssm[alignment_length - 1 - i][3 - j] = pssm[i][j];
             cout << pssm[i][j] << "\t";
         }
         cout << endl;
     }
-    cout << endl
-         << "Training set motif scores:"
-         << "\n";
-    cerr << "Time after printing matrix: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+    cerr << "Time after PSSM calculation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
 
-    float min_input_score = 10000;
-    int min_score_alignment = -1;
-    for (i = 0; i < lineNum; i++)
+    // take care of the current sequence, calculate the score for all positions
+    vector<double> current_score_list;
+    int seq_length = seq_seqs_transformed[0].size();
+    double score_sum = 0;
+    cout << "seq_length: " << seq_length << endl;
+    for (i = 0; i < seq_length - motifLength + 1; i++)
     {
-        input_score = 0;
-        for (int j = 0; j < alignment_length; j++)
+        double current_score = 0;
+        for (j = 0; j < motifLength; j++)
         {
-            current_base = seqs[i][j];
-            if (current_base == "A")
-            {
-                input_score += pssm[j][0];
-            }
-            else if (current_base == "C")
-            {
-                input_score += pssm[j][1];
-            }
-            else if (current_base == "G")
-            {
-                input_score += pssm[j][2];
-            }
-            else if (current_base == "T")
-            {
-                input_score += pssm[j][3];
-            }
-            else
-            {
-                cout << "something's wierd in the alignment file" << endl;
-            }
-        }
-        cout << seqs[i] << "\t" << input_score << "\n";
-        if (input_score < min_input_score)
-        {
-            min_score_alignment = i;
-            min_input_score = input_score;
-        }
-    }
-    cout << endl
-         << min_score_alignment << ": " << seqs[min_score_alignment] << " were selected since the score is the least: " << min_input_score << "\n\n";
+            cout << seq_seqs_transformed[current_background_seq_index][i + j];
+            current_base = seq_seqs_transformed[current_background_seq_index][i + j];
 
-    if (argc > 3)
+            current_score += pssm[j][current_base];
+        }
+        if (current_score < 0) // in case it is negative
+        {
+            current_score = 0;
+        }
+        current_score_list.push_back(current_score);
+        score_sum += current_score;
+        cout << endl;
+    }
+
+    // get the new motif according to proportional probability
+    double R = drand48();
+    double score_accumulation = 0;
+    R *= score_sum;
+    i = 0;
+    while (R > score_accumulation)
     {
-        float scoreCutoff = atoi(argv[3]);
-        cout << "However, score cutoff was specified by user: " << scoreCutoff << endl;
-        min_input_score = scoreCutoff;
+        score_accumulation += current_score_list[i];
+        i++;
     }
-    cerr << "Time after determining threshold: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
-    cout << "Matches with score " << min_input_score << " or higher found in " << argv[2] << " (length " << sequence_num << "bp):"
-         << "\n\n";
-
-    //  let the sliding window begin
-    cout << "Start\tEnd\tStrand\tSequence\tScore" << endl;
-
-    float complementary_input_score = 0;
-    input_score = 0;
-    complementary_input_score = 0;
-
-    for (int i = 0; i < sequence_num - alignment_length; i++)
+    i--; //offset
+    // substitute the motif
+    for  (j = 0; j < motifLength; j++)
     {
-        input_score = 0;
-        complementary_input_score = 0;
-        for (int j = 0; j < alignment_length; j++)
-        {
-            current_base = sequence[i + j];
-            if (current_base == "A")
-            {
-                input_score += pssm[j][0];
-                complementary_input_score += complementary_pssm[j][0];
-            }
-            else if (current_base == "C")
-            {
-                input_score += pssm[j][1];
-                complementary_input_score += complementary_pssm[j][1];
-            }
-            else if (current_base == "G")
-            {
-                input_score += pssm[j][2];
-                complementary_input_score += complementary_pssm[j][2];
-            }
-            else if (current_base == "T")
-            {
-                input_score += pssm[j][3];
-                complementary_input_score += complementary_pssm[j][3];
-            }
-            else
-            {
-                cout << "something's wierd in the alignment file" << endl;
-            }
-        }
-
-        // cout << input_score << endl;
-        if (input_score >= min_input_score)
-        {
-            cout << i + 1 << "\t" << i + alignment_length << "\t"
-                 << "+"
-                 << "\t" << sequence.substr(i, alignment_length) << "\t" << input_score << "\n";
-        }
-        if (complementary_input_score >= min_input_score)
-        {
-            cout << i + 1 << "\t" << i + alignment_length << "\t"
-                 << "-"
-                 << "\t" << sequence.substr(i, alignment_length) << "\t" << complementary_input_score << "\n";
-        }
+        motif_list[current_background_seq_index][j] = seq_seqs_transformed[current_background_seq_index][i + j];
     }
-    // print this
-    //      Final motif length:   31
-    //  Final score:          106.646372
 
-    cerr << "Time after scanning the whole sequence: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+
+    
+// // generate random start positions
+// vector<int> start_positions;
+// for (int i = 0; i < rowSize; i++)
+// {
+//     int start = round(drand48() * (input_seqs.size() - 1));
+//     start_positions.push_back(start);
+// }
+// cout << "start positions generated" << endl;
+// cerr << "Time after start positions generation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+
+// // generate random motifs
+// vector<string> motifs;
+// for (int i = 0; i < rowSize; i++)
+// {
+//     int index = round(drand48() * (motif_list.size() - 1));
+//     motifs.push_back(motif_list[index]);
+// }
+// cout << "motifs generated" << endl;
+// cerr << "Time after motifs generation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+
+// // calculate motif count
+// vector<int> motif_count;
+// for (int i = 0; i < rowSize; i++)
+// {
+//     int count = 0;
+//     for (int j = 0; j < motifLength; j++)
+
+cerr << "Time after scanning the whole sequence: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+return 0;
 }
