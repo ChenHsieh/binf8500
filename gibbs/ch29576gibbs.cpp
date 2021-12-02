@@ -16,8 +16,143 @@
 
 using namespace std;
 
+std::string number2char(int number)
+{
+    switch (number)
+    {
+    case 0:
+        return "A";
+    case 1:
+        return "C";
+    case 2:
+        return "G";
+    case 3:
+        return "T";
+    default:
+        return "";
+    }
+}
+
+vector<vector<double> > get_pssm(vector<vector<int> > motif_list, vector<vector<int> > seq_seqs_transformed, int current_background_seq_index, vector<vector<double> > seq_gc)
+{
+    int alignment_length = motif_list[0].size();
+    int sequence_number = motif_list.size();
+    int frequency_matrix[alignment_length][4];
+    float probability_matrix[alignment_length][4];
+    vector<double> pssm_row;
+    vector<vector<double> > pssm;
+    int i, j;
+    for (i = 0; i < alignment_length; i++)
+    {
+        // init matrix current row
+        for (j = 0; j < 4; j++)
+        {
+            frequency_matrix[i][j] = 0;
+        }
+        // fill in the count by going through each aligned sequence
+        for (j = 0; j < sequence_number; j++)
+        {
+            // current base
+            if (j == current_background_seq_index)
+            {
+                continue;
+            }
+            else
+            {
+                frequency_matrix[i][motif_list[j][i]]++;
+            }
+        }
+        // calculate the probabilities
+        for (j = 0; j < 4; j++)
+        {
+            probability_matrix[i][j] = (frequency_matrix[i][j] + 0.25) / (sequence_number + 1);
+            if (current_background_seq_index == -1)
+            {
+                pssm_row.push_back(exp2(probability_matrix[i][j]));
+                // cout << probability_matrix[i][j] << " ";
+            }
+            else
+            {
+                // pssm_row.push_back(exp2(probability_matrix[i][j]) - exp2(seq_gc[current_background_seq_index][j]));
+                pssm_row.push_back((probability_matrix[i][j]) - exp2(seq_gc[current_background_seq_index][j]));
+                // cout << probability_matrix[i][j] << " ";
+            }
+        }
+        // cout << endl;
+        pssm.push_back(pssm_row);
+    }
+
+    return pssm;
+}
+
+vector<double> get_score_list(vector<vector<double> > pssm, vector<int> current_seq)
+{
+    int seq_length = current_seq.size();
+    int motifLength = pssm.size();
+    vector<double> current_score_list;
+    int i, j;
+    for (i = 0; i < seq_length - motifLength + 1; i++)
+    {
+        double current_score = 0;
+        for (j = 0; j < motifLength; j++)
+        {
+            current_score += pssm[j][current_seq[i + j]];
+        }
+        // cout << current_score << endl;
+        if (current_score < 0) // in case it is negative
+        {
+            current_score = 0;
+        }
+        current_score_list.push_back(current_score);
+    }
+    return current_score_list;
+}
+
+double get_score_sum(vector<double> current_score_list)
+{
+    int seq_length = current_score_list.size();
+    double current_score_sum = 0;
+    int i;
+    for (i = 0; i < seq_length; i++)
+    {
+        current_score_sum += current_score_list[i];
+    }
+    return current_score_sum;
+}
+int get_new_motif_position(vector<vector<int> > motif_list, vector<double> current_score_list, vector<vector<int> > seq_seqs_transformed, int current_background_seq_index)
+{
+    double R = drand48();
+    double score_accumulation = 0;
+    double score_sum = get_score_sum(current_score_list);
+    R *= score_sum;
+    int i = 0;
+    while (R > score_accumulation)
+    {
+        score_accumulation += current_score_list[i];
+        i++;
+    }
+    i--; // offset
+    return i;
+}
+vector<int> update_motif_list(vector<vector<int> > motif_list, vector<double> current_score_list, vector<vector<int> > seq_seqs_transformed, int current_background_seq_index, int new_motif_position)
+{
+
+    int alignment_length = motif_list[0].size();
+    int i = new_motif_position;
+    vector<int> new_motif(alignment_length, 0);
+    // substitute the motif
+    for (int j = 0; j < alignment_length; j++)
+    {
+        new_motif[j] = seq_seqs_transformed[current_background_seq_index][i + j];
+        // cout << seq_seqs_transformed[current_background_seq_index][i + j] << " ";
+    }
+    // cout << endl;
+    return new_motif;
+}
+
 int main(int argc, char **argv)
 {
+    srand48(time(NULL));
     // timer
     clock_t Start = 0;
 
@@ -71,6 +206,7 @@ int main(int argc, char **argv)
     int start = 1;
     int end = 0;
 
+    // read input files
     while (end != std::string::npos)
     {
         end = file_contents.find("\n", start);
@@ -136,6 +272,7 @@ int main(int argc, char **argv)
 
     // get initial motif list according to motif length
     vector<vector<int> > motif_list;
+    vector<int> motif_position;
     for (int i = 0; i < seq_seqs_transformed.size(); i++)
     {
         vector<int> motif_list_i;
@@ -145,125 +282,84 @@ int main(int argc, char **argv)
             motif_list_i.push_back(seq_seqs_transformed[i][R + j]);
         }
         motif_list.push_back(motif_list_i);
+        motif_position.push_back(R);
     }
-    cout << "motif list generated" << endl;
+    cout << "initial motif list generated" << endl;
     cerr << "Time after motif list generation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
 
-    // calculate pssm
-    int current_background_seq_index = 0;
-    unsigned int sequence_number = rowSize - 1;
-    const unsigned alignment_length = motifLength;
-    int frequency_matrix[alignment_length][4];
-    float probability_matrix[alignment_length][4];
-    float pssm[alignment_length][4];
-    unsigned i, j;
-    int current_base;
-    // get the probabilities
-    for (i = 0; i < alignment_length; i++)
+    // Gibbs sampling
+    int plateau_count = 0;
+    int plateau_count_max = 200;
+    double score_max = 0;
+    vector<vector<int> > motif_list_max;
+    vector<int> motif_position_max;
+    bool optimizing = true;
+    int cycle_count = 0;
+    while (optimizing)
     {
-        // init matrix current row
-        for (j = 0; j < 4; j++)
+        cycle_count++;
+        // cycle
+        for (int current_background_seq_index = 0; current_background_seq_index < seq_seqs_transformed.size(); current_background_seq_index++)
         {
-            frequency_matrix[i][j] = 0;
+            // get pssm
+            vector<vector<double> > pssm = get_pssm(motif_list, seq_seqs_transformed, current_background_seq_index, seq_gc);
+            cout << "cycle_count: " << cycle_count << "pssm" << endl;
+            // take care of the current sequence, calculate the score for all positions
+            vector<double> current_score_list = get_score_list(pssm, seq_seqs_transformed[current_background_seq_index]);
+            cout << "cycle_count: " << cycle_count << "score list" << endl;
+            // get the new motif according to proportional probability
+            motif_position[current_background_seq_index] = get_new_motif_position(motif_list, current_score_list, seq_seqs_transformed, current_background_seq_index);
+            cout << "cycle_count: " << cycle_count << "get new motif" << endl;
+            // cout << current_background_seq_index << ", " << motif_position[current_background_seq_index] << endl;
+            motif_list[current_background_seq_index] = update_motif_list(motif_list, current_score_list, seq_seqs_transformed, current_background_seq_index, motif_position[current_background_seq_index]);
+            cout << "cycle_count: " << cycle_count << "update motif" << endl;
         }
-        // fill in the count by going through each aligned sequence
-        for (j = 0; j < sequence_number; j++)
+        cout << "cycle_count: " << cycle_count << endl;
+        // objective function
+
+        // after a whole round of substitution, calculate the pssm again to check the overall score improvement
+        double score_sum = 0;
+        vector<vector<double> >
+            pssm = get_pssm(motif_list, seq_seqs_transformed, -1, seq_gc);
+        for (int i = 0; i < seq_seqs_transformed.size(); i++)
         {
-            // current base
-            frequency_matrix[i][seq_seqs_transformed[j][i]]++;
+            vector<double> current_score_list = get_score_list(pssm, motif_list[i]);
+            cout << current_score_list[0] << endl;
+            score_sum += current_score_list[0];
         }
-        // calculate the probabilities
-        for (j = 0; j < 4; j++)
+
+        if (score_sum > score_max)
         {
-            probability_matrix[i][j] = (frequency_matrix[i][j] + 0.25) / (sequence_number + 1);
-            pssm[i][j] = log2f(probability_matrix[i][j]) - log2f(seq_gc[current_background_seq_index][j]);
+            score_max = score_sum;
+            motif_list_max = motif_list;
+            motif_position_max = motif_position;
+            plateau_count = 0;
+        }
+        else
+        {
+            plateau_count++;
+        }
+
+        cout << ", " << score_max << ", " << score_sum << endl;
+        if (plateau_count > plateau_count_max)
+        {
+            optimizing = false;
         }
     }
-    // we do not need the complementary matrix this time
-    cout << "PSSM:" << endl
-         << "pos.\tA\tC\tG\tT" << endl;
-    for (i = 0; i < alignment_length; i++)
+    cout << "Gibbs sampling finished" << endl;
+    cout << "best score: " << score_max << endl;
+    for (int i = 0; i < motif_list_max.size(); i++)
     {
-        cout << i + 1 << "\t";
-        for (j = 0; j < 4; j++)
+        cout << seq_names[i] << "\t";
+        cout << motif_position_max[i] << "-" << (motif_position_max[i] + motifLength) << "\t";
+        for (int j = 0; j < motif_list_max[i].size(); j++)
         {
-            // complementary_pssm[alignment_length - 1 - i][3 - j] = pssm[i][j];
-            cout << pssm[i][j] << "\t";
+            cout << number2char(motif_list_max[i][j]);
         }
         cout << endl;
     }
-    cerr << "Time after PSSM calculation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+    cout << "cycle_count: " << cycle_count << endl;
 
-    // take care of the current sequence, calculate the score for all positions
-    vector<double> current_score_list;
-    int seq_length = seq_seqs_transformed[0].size();
-    double score_sum = 0;
-    cout << "seq_length: " << seq_length << endl;
-    for (i = 0; i < seq_length - motifLength + 1; i++)
-    {
-        double current_score = 0;
-        for (j = 0; j < motifLength; j++)
-        {
-            cout << seq_seqs_transformed[current_background_seq_index][i + j];
-            current_base = seq_seqs_transformed[current_background_seq_index][i + j];
-
-            current_score += pssm[j][current_base];
-        }
-        if (current_score < 0) // in case it is negative
-        {
-            current_score = 0;
-        }
-        current_score_list.push_back(current_score);
-        score_sum += current_score;
-        cout << endl;
-    }
-
-    // get the new motif according to proportional probability
-    double R = drand48();
-    double score_accumulation = 0;
-    R *= score_sum;
-    i = 0;
-    while (R > score_accumulation)
-    {
-        score_accumulation += current_score_list[i];
-        i++;
-    }
-    i--; //offset
-    // substitute the motif
-    for  (j = 0; j < motifLength; j++)
-    {
-        motif_list[current_background_seq_index][j] = seq_seqs_transformed[current_background_seq_index][i + j];
-    }
-
-
-    
-// // generate random start positions
-// vector<int> start_positions;
-// for (int i = 0; i < rowSize; i++)
-// {
-//     int start = round(drand48() * (input_seqs.size() - 1));
-//     start_positions.push_back(start);
-// }
-// cout << "start positions generated" << endl;
-// cerr << "Time after start positions generation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
-
-// // generate random motifs
-// vector<string> motifs;
-// for (int i = 0; i < rowSize; i++)
-// {
-//     int index = round(drand48() * (motif_list.size() - 1));
-//     motifs.push_back(motif_list[index]);
-// }
-// cout << "motifs generated" << endl;
-// cerr << "Time after motifs generation: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
-
-// // calculate motif count
-// vector<int> motif_count;
-// for (int i = 0; i < rowSize; i++)
-// {
-//     int count = 0;
-//     for (int j = 0; j < motifLength; j++)
-
-cerr << "Time after scanning the whole sequence: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
-return 0;
+    cerr << "Time after scanning the whole sequence: " << (clock() - Start) / (double)(CLOCKS_PER_SEC) << "seconds\n";
+    return 0;
 }
