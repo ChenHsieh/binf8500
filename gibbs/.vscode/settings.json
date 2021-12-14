@@ -3,6 +3,7 @@
         "vector": "cpp",
         "iosfwd": "cpp",
         "iterator": "cpp",
-        "__node_handle": "cpp"
+        "__node_handle": "cpp",
+        "ostream": "cpp"
     }
 }

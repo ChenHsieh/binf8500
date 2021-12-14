@@ -16,6 +16,7 @@
 
 using namespace std;
 
+// helper function to turn the numbers into ATCG for printing
 std::string number2char(int number)
 {
     switch (number)
@@ -33,6 +34,7 @@ std::string number2char(int number)
     }
 }
 
+// helper function to get PSSM matrix from selected motifs
 vector<vector<double> > get_pssm(vector<vector<int> > motif_list, vector<vector<int> > seq_seqs_transformed, int current_background_seq_index, vector<vector<double> > seq_gc)
 {
     int alignment_length = motif_list[0].size();
@@ -52,7 +54,7 @@ vector<vector<double> > get_pssm(vector<vector<int> > motif_list, vector<vector<
         // fill in the count by going through each aligned sequence
         for (j = 0; j < sequence_number; j++)
         {
-            // current base
+            // exclude the current one
             if (j == current_background_seq_index)
             {
                 continue;
@@ -62,52 +64,48 @@ vector<vector<double> > get_pssm(vector<vector<int> > motif_list, vector<vector<
                 frequency_matrix[i][motif_list[j][i]]++;
             }
         }
+
         // calculate the probabilities
         for (j = 0; j < 4; j++)
         {
+            // pseudo count
             probability_matrix[i][j] = (frequency_matrix[i][j] + 0.25) / (sequence_number + 1);
-            if (current_background_seq_index == -1)
+            // using exp2 to avoid the problem of negative value
+            if (current_background_seq_index == -1) // to not use the background value during checking performance
             {
                 pssm_row.push_back(exp2(probability_matrix[i][j]));
-                // cout << probability_matrix[i][j] << " ";
             }
             else
             {
-                // pssm_row.push_back(exp2(probability_matrix[i][j]) - exp2(seq_gc[current_background_seq_index][j]));
-                pssm_row.push_back((probability_matrix[i][j]) - exp2(seq_gc[current_background_seq_index][j]));
-                // cout << probability_matrix[i][j] << " ";
+                pssm_row.push_back(exp2(probability_matrix[i][j] / seq_gc[current_background_seq_index][j]));
             }
         }
-        // cout << endl;
         pssm.push_back(pssm_row);
     }
-
     return pssm;
 }
 
+// calculate all scores for all postitions in the current sequence
 vector<double> get_score_list(vector<vector<double> > pssm, vector<int> current_seq)
 {
     int seq_length = current_seq.size();
     int motifLength = pssm.size();
     vector<double> current_score_list;
     int i, j;
+    // go through each position in the sequence
     for (i = 0; i < seq_length - motifLength + 1; i++)
     {
         double current_score = 0;
-        for (j = 0; j < motifLength; j++)
+        for (j = 0; j < motifLength; j++) // accumulate the score
         {
             current_score += pssm[j][current_seq[i + j]];
-        }
-        // cout << current_score << endl;
-        if (current_score < 0) // in case it is negative
-        {
-            current_score = 0;
         }
         current_score_list.push_back(current_score);
     }
     return current_score_list;
 }
 
+// accumulate all scores in the given vector of scores
 double get_score_sum(vector<double> current_score_list)
 {
     int seq_length = current_score_list.size();
@@ -119,24 +117,33 @@ double get_score_sum(vector<double> current_score_list)
     }
     return current_score_sum;
 }
+
+// randomly select the next motif according to the proportional possibility
 int get_new_motif_position(vector<vector<int> > motif_list, vector<double> current_score_list, vector<vector<int> > seq_seqs_transformed, int current_background_seq_index)
 {
     double R = drand48();
     double score_accumulation = 0;
     double score_sum = get_score_sum(current_score_list);
-    R *= score_sum;
+    R *= score_sum; // scale the random number in the range of 0 to the sum of scores
     int i = 0;
-    while (R > score_accumulation)
+    while (R > score_accumulation) // when the accumulation is larger than the scaled R, then stop
     {
         score_accumulation += current_score_list[i];
         i++;
     }
-    i--; // offset
-    return i;
+    if (i == 0) // in case the random number is really 0
+    {
+        return 0;
+    }
+    else
+    {
+        return i - 1; // deal with the offset
+    }
 }
+
+// get the new motif according to the new position
 vector<int> update_motif_list(vector<vector<int> > motif_list, vector<double> current_score_list, vector<vector<int> > seq_seqs_transformed, int current_background_seq_index, int new_motif_position)
 {
-
     int alignment_length = motif_list[0].size();
     int i = new_motif_position;
     vector<int> new_motif(alignment_length, 0);
@@ -144,9 +151,7 @@ vector<int> update_motif_list(vector<vector<int> > motif_list, vector<double> cu
     for (int j = 0; j < alignment_length; j++)
     {
         new_motif[j] = seq_seqs_transformed[current_background_seq_index][i + j];
-        // cout << seq_seqs_transformed[current_background_seq_index][i + j] << " ";
     }
-    // cout << endl;
     return new_motif;
 }
 
@@ -303,31 +308,30 @@ int main(int argc, char **argv)
         {
             // get pssm
             vector<vector<double> > pssm = get_pssm(motif_list, seq_seqs_transformed, current_background_seq_index, seq_gc);
-            cout << "cycle_count: " << cycle_count << "pssm" << endl;
+         
             // take care of the current sequence, calculate the score for all positions
             vector<double> current_score_list = get_score_list(pssm, seq_seqs_transformed[current_background_seq_index]);
-            cout << "cycle_count: " << cycle_count << "score list" << endl;
+         
             // get the new motif according to proportional probability
             motif_position[current_background_seq_index] = get_new_motif_position(motif_list, current_score_list, seq_seqs_transformed, current_background_seq_index);
-            cout << "cycle_count: " << cycle_count << "get new motif" << endl;
-            // cout << current_background_seq_index << ", " << motif_position[current_background_seq_index] << endl;
+         
+            // get the new motif according to the position
             motif_list[current_background_seq_index] = update_motif_list(motif_list, current_score_list, seq_seqs_transformed, current_background_seq_index, motif_position[current_background_seq_index]);
-            cout << "cycle_count: " << cycle_count << "update motif" << endl;
+         
         }
-        cout << "cycle_count: " << cycle_count << endl;
+        
         // objective function
 
         // after a whole round of substitution, calculate the pssm again to check the overall score improvement
         double score_sum = 0;
-        vector<vector<double> >
-            pssm = get_pssm(motif_list, seq_seqs_transformed, -1, seq_gc);
+        vector<vector<double> > pssm = get_pssm(motif_list, seq_seqs_transformed, -1, seq_gc); // use the -1 to skip the usage of background sequence
+        // get the score for all motifs and get their sum for evaluation
         for (int i = 0; i < seq_seqs_transformed.size(); i++)
         {
             vector<double> current_score_list = get_score_list(pssm, motif_list[i]);
-            cout << current_score_list[0] << endl;
             score_sum += current_score_list[0];
         }
-
+        // if better than store those important information
         if (score_sum > score_max)
         {
             score_max = score_sum;
@@ -340,12 +344,14 @@ int main(int argc, char **argv)
             plateau_count++;
         }
 
-        cout << ", " << score_max << ", " << score_sum << endl;
-        if (plateau_count > plateau_count_max)
+        // cout << "score_max, score_sum: " << score_max << ", " << score_sum << endl;
+        if (plateau_count > plateau_count_max) // if no better result anymore then stop after the plateau_count
         {
             optimizing = false;
         }
     }
+
+    // output the result
     cout << "Gibbs sampling finished" << endl;
     cout << "best score: " << score_max << endl;
     for (int i = 0; i < motif_list_max.size(); i++)
